@@ -26,15 +26,5 @@ See [RUNBOOK-phone.md](RUNBOOK-phone.md). Still to do:
 - [ ] Tell the household the new address (or bind `.101` to the phone later; the vacuum holds it now).
 - [ ] Tap **Back up now** in Settings once and check the Drive folder updated from the phone.
 
-## When moving the server to the Mac
-
-- [ ] Stop the Windows server first (so the database isn't mid-write).
-- [ ] Copy `secrets/` to the Mac by AirDrop or USB (or from the password manager).
-- [ ] Rebuild `data/` on the Mac from the Drive backup: `npm run restore`
-      (or copy the Windows `data/` folder if you prefer the exact current state).
-- [ ] Follow [RUNBOOK-mac.md](RUNBOOK-mac.md) for Node, clone, build and the login agent.
-- [ ] Decommission the Windows side once the Mac has run a day:
-      `Unregister-ScheduledTask -TaskName HomeAssets -Confirm:$false` (if it was ever installed).
-
 If a secret ever leaks: see the table in [BACKUP.md](BACKUP.md) for how to revoke and
 recreate each one.

@@ -80,11 +80,6 @@ Production runs on the OnePlus 9 (Termux + proot Ubuntu), see [docs/RUNBOOK-phon
 Develop on the laptop with `npm run dev` (test instance + Vite), seed realistic data with
 `npm run test:seed`, then commit and `scripts/deploy-phone.sh`.
 
-## Run on a Mac
-
-See [docs/RUNBOOK-mac.md](docs/RUNBOOK-mac.md). Short version: `bash scripts/mac/setup.sh`,
-copy `secrets/` and `data/` over, then `bash scripts/mac/install-launchd.sh`.
-
 ## How sync works
 
 - The app reads and writes SQLite. Every write is pushed to the sheet immediately.

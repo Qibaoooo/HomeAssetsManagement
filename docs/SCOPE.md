@@ -4,7 +4,8 @@
 - Only the `HomeAssets` tab of the sheet. Budget tabs (2020–2023) are out of scope.
 - Mobile-first UI: browse grouped by category/location, search and filter,
   add/edit with cover photo, quick quantity adjust, retire.
-- Hosted on the home laptop, reached over LAN (`http://192.168.1.101:<port>`).
+- Hosted on a phone in the house (OnePlus 9, Termux + proot Ubuntu, see RUNBOOK-phone.md),
+  reached over LAN at `http://192.168.1.102:8787`. Was the home laptop until 2026-11-21.
   Tailscale is phase 2 for outside access and HTTPS.
 
 ## Stack
