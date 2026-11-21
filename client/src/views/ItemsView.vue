@@ -50,7 +50,7 @@ const subtitle = (i: Item) =>
 const totalActive = computed(() => store.active.length);
 
 /** One standard placeholder for items without a photo. */
-const PLACEHOLDER = 'emoji:bunny-dizzy';
+const PLACEHOLDER = 'emoji:cat-purple';
 </script>
 
 <template>
