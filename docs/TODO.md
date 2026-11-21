@@ -9,9 +9,10 @@ Cloud Console, project `homeassetmanagement` (the OAuth pages are under **Google
 - [ ] Google Auth Platform → **Data access**: add scope `https://www.googleapis.com/auth/drive.file`
 - [ ] Google Auth Platform → **Audience**: External; add test user `luozhengiw@gmail.com`;
       set publishing status **In production** (Testing status expires the login every 7 days)
-- [ ] Google Auth Platform → **Clients → Create client**: type **Desktop app** → Create →
-      download the JSON → save as `secrets/oauth-client.json`
-- [ ] In the repo: `npm run drive-auth`, open the printed URL, sign in as luozhengiw@gmail.com, allow
+- [x] Google Auth Platform → **Clients → Create client**: type **Desktop app** → Create →
+      download the JSON → save as `secrets/oauth-client.json` (done 2026-11-21)
+- [ ] **NEXT:** `npm run drive-auth` is running and waiting. Open the URL it printed in a browser on this
+      laptop, sign in as luozhengiw@gmail.com, allow. If the listener is gone, run `npm run drive-auth` again.
 - [ ] Restart the server, then **Back up now** in Settings (or `npm run backup`)
 - [ ] Check the "HomeAssets Backup" folder appears in Drive with `home-assets.sqlite` and `photos/`
 
