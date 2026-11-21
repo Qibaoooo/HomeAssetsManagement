@@ -13,7 +13,11 @@ const toastOpen = computed({
   },
 });
 const toastIcon = computed(() =>
-  toast.value?.color === 'error' ? 'cross' : toast.value?.color === 'warning' ? 'exclaim' : 'check',
+  toast.value?.color === 'error'
+    ? 'emoji:bunny-cross'
+    : toast.value?.color === 'warning'
+      ? 'emoji:bunny-exclaim'
+      : 'emoji:bunny-check',
 );
 </script>
 
@@ -44,7 +48,7 @@ const toastIcon = computed(() =>
 
     <v-snackbar v-model="toastOpen" :timeout="2500" location="top" content-class="px-panel">
       <div class="d-flex align-center ga-2">
-        <PxIcon :name="toastIcon" :size="24" />
+        <PxIcon :name="toastIcon" :size="36" />
         <span>{{ toast?.text }}</span>
       </div>
     </v-snackbar>

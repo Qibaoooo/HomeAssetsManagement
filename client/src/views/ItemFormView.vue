@@ -165,7 +165,7 @@ const typeSuggestions = computed(() => {
       <div class="px-panel px-panel--dark mb-2">
         <div class="photo-frame" :class="{ 'photo-frame--empty': !shownPhoto }">
           <img v-if="shownPhoto" :src="shownPhoto" alt="item photo" />
-          <PxIcon v-else name="question" variant="light" :size="64" />
+          <PxIcon v-else name="emoji:cat-yellow" :size="80" />
         </div>
       </div>
       <div class="d-flex ga-2 mb-5">
@@ -238,7 +238,10 @@ const typeSuggestions = computed(() => {
 
     <v-dialog v-model="confirmRetire" max-width="360">
       <v-card class="px-panel" title="Retire this item?">
-        <v-card-text>It stays in the sheet marked <em>retired</em> and is hidden from the list by default.</v-card-text>
+        <v-card-text class="d-flex align-center ga-3">
+          <PxIcon name="emoji:bunny-sweat" :size="48" />
+          <span>It stays in the sheet marked <em>retired</em> and is hidden from the list by default.</span>
+        </v-card-text>
         <v-card-actions class="ga-2 px-3 pb-3">
           <v-spacer />
           <v-btn class="px-btn px-btn--cream" @click="confirmRetire = false">Cancel</v-btn>

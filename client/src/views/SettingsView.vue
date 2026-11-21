@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue';
 import { api } from '../api';
 import PxIcon from '../components/PxIcon.vue';
+import PxSprite from '../components/PxSprite.vue';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
 import { notify } from '../toast';
@@ -66,20 +67,26 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
 
       <v-card class="px-panel" title="Google Sheet sync">
         <v-card-text v-if="status">
-          <div v-if="status.last" class="mb-2 d-flex align-center ga-2">
-            <PxIcon :name="status.last.ok ? 'check' : 'cross'" :size="24" />
-            <span class="px-font">{{ status.last.ok ? 'OK' : 'Failed' }}</span>
-            <span class="text-medium-emphasis">{{ fmt(status.last.at) }}</span>
+          <div class="d-flex align-center ga-3 mb-2">
+            <PxSprite v-if="syncing" name="bunny-happy" :size="56" :fps="8" />
+            <PxSprite v-else-if="!status.last" name="bunny-sleep" :size="56" :fps="2" />
+            <PxIcon v-else :name="status.last.ok ? 'emoji:bunny-check' : 'emoji:bunny-cross'" :size="48" />
+            <div>
+              <template v-if="status.last">
+                <span class="px-font">{{ status.last.ok ? 'OK' : 'Failed' }}</span>
+                <span class="text-medium-emphasis ml-2">{{ fmt(status.last.at) }}</span>
+                <div class="text-body-2">{{ status.last.ok ? counts(status.last) : status.last.error }}</div>
+              </template>
+              <span v-else class="text-medium-emphasis">No sync has run yet.</span>
+            </div>
           </div>
-          <div v-if="status.last" class="text-body-2 mb-2">{{ status.last.ok ? counts(status.last) : status.last.error }}</div>
-          <div v-else class="text-medium-emphasis mb-2">No sync has run yet.</div>
           <v-alert v-if="status.pending" class="px-alert mb-2" density="compact">
             {{ status.pending }} change{{ status.pending > 1 ? 's' : '' }} waiting to be written to the sheet.
           </v-alert>
         </v-card-text>
         <v-card-actions class="px-3 pb-3 ga-2">
           <v-btn class="px-btn" :loading="syncing" @click="syncNow">
-            <PxIcon name="star" :size="20" class="mr-2" />Sync now
+            <v-icon start>mdi-sync</v-icon>Sync now
           </v-btn>
           <v-btn class="px-btn px-btn--cream" @click="refresh">Refresh</v-btn>
         </v-card-actions>

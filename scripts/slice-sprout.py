@@ -67,4 +67,44 @@ for r, shade in enumerate(["grey", "cream", "tan", "brown"]):
         padded.paste(tile, (0, 0))
         save(padded, f"buttons/{shade}-{state}.png")
 
+# --- emoji: ~28px sprites on a 32px pitch (not exact), cropped per cell and trimmed ---------
+emoji = Image.open(RAW / "Emoji_Spritesheet_Free.png").convert("RGBA")
+EMOJI = {  # name: (col, row) on the 32px pitch
+    "cat-green": (0, 2), "cat-lime": (1, 2), "cat-yellow": (2, 2), "cat-orange": (3, 2), "cat-red": (4, 2),
+    "cat-pink": (0, 3), "cat-purple": (1, 3), "cat-skull": (2, 3), "cat-blue": (3, 3), "cat-cry": (4, 3),
+    "bunny": (0, 4), "bunny-smile": (1, 4), "bunny-happy": (2, 4), "bunny-blush": (3, 4),
+    "bunny-check": (0, 5), "bunny-thumb": (1, 5), "bunny-exclaim": (2, 5), "bunny-love": (3, 5), "bunny-cross": (4, 5),
+    "bunny-question": (0, 6), "bunny-dizzy": (1, 6), "bunny-sleep": (2, 6), "bunny-sweat": (3, 6),
+    "check": (0, 7), "cross": (1, 7), "exclaim": (2, 7), "question": (3, 7), "zzz": (4, 7),
+    "note": (0, 8), "coin": (1, 8), "hearts": (2, 8), "heart": (3, 8), "star": (4, 8),
+    "thumb-up": (0, 9), "thumb-down": (1, 9),
+    "sprout": (0, 12), "flower": (1, 12), "clover": (2, 12), "mushroom": (3, 12),
+    "apple": (0, 13), "leaf": (1, 13), "tomato": (2, 13), "corn": (3, 13), "carrot": (4, 13),
+    "tree": (0, 14), "bush": (1, 14), "rock": (4, 14),
+    "hammer": (0, 16), "axe": (1, 16), "watering-can": (2, 16),
+    "chicken": (0, 17), "chick": (1, 17), "cow": (2, 17), "calf": (3, 17),
+    "sun": (0, 18), "cloud": (1, 18), "rain": (2, 18), "sun-face": (3, 18), "moon": (4, 18),
+}
+for name, (c, r) in EMOJI.items():
+    save(trim(cell(emoji, c * 32, r * 32, 32, 32)), f"emoji/{name}.png")
+
+# --- bunny character ("Teemo"): 32x32 frames, one animation per row --------------------------
+# Each strip is saved as a horizontal film strip; PxSprite.vue steps through it with CSS.
+teemo = Image.open(RAW / "Teemo emotes.png").convert("RGBA")
+STRIPS = {  # name: [(col, row), ...]
+    "bunny-idle": [(0, 0), (0, 0), (0, 0), (0, 1), (1, 1), (0, 0), (0, 0), (0, 2), (1, 2), (2, 2), (3, 2), (4, 2)],
+    "bunny-happy": [(0, 3), (1, 3), (2, 3), (3, 3)],
+    "bunny-love": [(0, 4), (1, 4), (0, 5), (1, 5)],
+    "bunny-cool": [(0, 8), (1, 8)],
+    "bunny-angry": [(0, 9), (1, 9), (0, 10), (1, 10)],
+    "bunny-surprised": [(0, 11), (1, 11)],
+    "bunny-sleep": [(0, 13), (1, 13)],
+    "bunny-dizzy": [(0, 14)],
+}
+for name, frames in STRIPS.items():
+    strip = Image.new("RGBA", (32 * len(frames), 32), (0, 0, 0, 0))
+    for k, (c, r) in enumerate(frames):
+        strip.paste(cell(teemo, c * 32, r * 32, 32, 32), (32 * k, 0))
+    save(strip, f"sprites/{name}.png")
+
 print("sliced into", ROOT)

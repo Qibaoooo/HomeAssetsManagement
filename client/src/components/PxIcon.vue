@@ -2,9 +2,10 @@
 import { computed } from 'vue';
 
 /**
- * 16px Sprout Lands icon, rendered crisp at any multiple of 16.
- * Names: house, plus, minus, gear, check, cross, ban, star, question, exclaim,
- *        dollar, cart, trophy, crown, podium, chat, skull, controller.
+ * Sprout Lands pixel image, rendered crisp.
+ * - 16px UI icons: house, plus, minus, gear, check, cross, ban, star, question, exclaim,
+ *   dollar, cart, trophy, crown, podium, chat, skull, controller (variants dark/light/pale/white).
+ * - `emoji:<name>` for the ~28px emoji (cat-*, bunny-*, chicken, cow, sprout, ...).
  */
 const props = withDefaults(
   defineProps<{
@@ -16,7 +17,13 @@ const props = withDefaults(
 );
 
 const icons = import.meta.glob('../assets/sprout/icons/*.png', { eager: true, import: 'default' }) as Record<string, string>;
-const src = computed(() => icons[`../assets/sprout/icons/${props.variant}-${props.name}.png`]);
+const emoji = import.meta.glob('../assets/sprout/emoji/*.png', { eager: true, import: 'default' }) as Record<string, string>;
+
+const src = computed(() =>
+  props.name.startsWith('emoji:')
+    ? emoji[`../assets/sprout/emoji/${props.name.slice(6)}.png`]
+    : icons[`../assets/sprout/icons/${props.variant}-${props.name}.png`],
+);
 </script>
 
 <template>
@@ -28,5 +35,6 @@ const src = computed(() => icons[`../assets/sprout/icons/${props.variant}-${prop
   display: inline-block;
   vertical-align: middle;
   flex: none;
+  object-fit: contain;
 }
 </style>

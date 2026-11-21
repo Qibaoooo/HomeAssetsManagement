@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, ref } from 'vue';
 import PxIcon from '../components/PxIcon.vue';
+import PxSprite from '../components/PxSprite.vue';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
 import type { Item } from '../types';
@@ -47,6 +48,15 @@ const title = (i: Item) => [i.type, i.design && i.design !== '-' ? i.design : ''
 const subtitle = (i: Item) =>
   [i.brand, i.location, i.size, i.tag && i.tag !== '-' ? `#${i.tag}` : ''].filter(Boolean).join(' · ');
 const totalActive = computed(() => store.active.length);
+
+// Items without a photo get a cat, picked per item so it stays the same between visits.
+const CATS = ['cat-green', 'cat-lime', 'cat-yellow', 'cat-orange', 'cat-pink', 'cat-blue', 'cat-purple'];
+const catFor = (i: Item) => {
+  if (i.status === 'retired') return 'emoji:cat-skull';
+  let h = 0;
+  for (const ch of i.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `emoji:${CATS[h % CATS.length]}`;
+};
 </script>
 
 <template>
@@ -57,9 +67,9 @@ const totalActive = computed(() => store.active.length);
       </template>
       <v-app-bar-title>Home Assets</v-app-bar-title>
       <template #append>
-        <v-btn variant="text" :loading="store.loading" class="px-btn px-btn--cream px-btn--icon mr-2" @click="store.load(true)">
-          <PxIcon name="star" :size="24" />
-        </v-btn>
+        <button type="button" class="mascot mr-1" aria-label="Reload" title="Reload" @click="store.load(true)">
+          <PxSprite :name="store.loading ? 'bunny-happy' : 'bunny-idle'" :size="48" :fps="store.loading ? 8 : 4" />
+        </button>
       </template>
     </v-app-bar>
 
@@ -102,7 +112,7 @@ const totalActive = computed(() => store.active.length);
             <template #prepend>
               <div class="px-slot thumb mr-3">
                 <img v-if="i.thumb_url" :src="i.thumb_url" alt="" />
-                <PxIcon v-else name="question" variant="light" :size="24" />
+                <PxIcon v-else :name="catFor(i)" :size="40" />
               </div>
             </template>
             <v-list-item-title>{{ title(i) }}</v-list-item-title>
@@ -120,9 +130,14 @@ const totalActive = computed(() => store.active.length);
     </template>
 
     <div v-else-if="!store.loading" class="px-panel mx-4 text-center text-medium-emphasis pa-6">
-      <PxIcon name="question" variant="light" :size="48" class="mb-2" />
-      <div v-if="store.items.length">Nothing matches your filters.</div>
-      <div v-else>No items yet. Tap <strong>Add</strong> to create the first one.</div>
+      <template v-if="store.items.length">
+        <PxIcon name="emoji:bunny-question" :size="64" class="mb-2" />
+        <div>Nothing matches your filters.</div>
+      </template>
+      <template v-else>
+        <PxSprite name="bunny-sleep" :size="64" :fps="2" class="mb-2" />
+        <div>No items yet. Tap <strong>Add</strong> to create the first one.</div>
+      </template>
     </div>
 
     <v-progress-linear v-if="store.loading && !store.items.length" indeterminate />
@@ -143,6 +158,17 @@ const totalActive = computed(() => store.active.length);
   top: 56px;
   z-index: 3;
   background: var(--sp-cream);
+}
+.mascot {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  margin-right: 8px;
+}
+.mascot:active {
+  transform: translateY(2px);
 }
 .thumb {
   width: 60px;
