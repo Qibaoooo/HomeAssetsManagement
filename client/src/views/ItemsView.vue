@@ -61,6 +61,19 @@ const parsedSearch = computed(() => {
   };
 });
 
+// Category chips: only categories with at least one item that is not hidden as retired.
+const categoryOptions = computed(() => {
+  const set = new Set<string>();
+  for (const i of store.items) {
+    if (!settings.showRetired && i.status === 'retired') continue;
+    if (i.category) set.add(i.category);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+});
+watch(categoryOptions, (opts) => {
+  if (category.value && !opts.includes(category.value)) category.value = null;
+});
+
 // Location chips belong to the chosen category: only its locations, and none without a category.
 const locationsForCategory = computed(() => {
   if (!category.value) return [];
@@ -159,7 +172,7 @@ watch(itemsReset, () => {
         density="compact"
       />
       <v-chip-group v-model="category" class="mt-1" selected-class="px-chip--on" column>
-        <v-chip v-for="c in store.meta.categories" :key="c" :value="c" filter size="small">{{ c }}</v-chip>
+        <v-chip v-for="c in categoryOptions" :key="c" :value="c" filter size="small">{{ c }}</v-chip>
       </v-chip-group>
       <v-chip-group v-if="tagOptions.length" v-model="selectedTags" multiple selected-class="px-chip--on" class="tag-row">
         <v-chip v-for="t in tagOptions" :key="t.key" :value="t.key" filter size="small" variant="outlined">
