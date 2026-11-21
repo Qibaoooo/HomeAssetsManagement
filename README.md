@@ -54,6 +54,11 @@ One-off sync from the command line: `npm run sync`.
 Give the laptop a DHCP reservation on the router so its address stays fixed, then
 open `http://192.168.1.101:8787` on a phone and add it to the home screen.
 
+## Run on a Mac
+
+See [docs/RUNBOOK-mac.md](docs/RUNBOOK-mac.md). Short version: `bash scripts/mac/setup.sh`,
+copy `secrets/` and `data/` over, then `bash scripts/mac/install-launchd.sh`.
+
 ## How sync works
 
 - The app reads and writes SQLite. Every write is pushed to the sheet immediately.
