@@ -1,0 +1,33 @@
+html,
+body {
+  margin: 0;
+  overscroll-behavior-y: none;
+}
+
+/* keep content clear of the bottom navigation + iOS home bar */
+.page {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.fab {
+  position: fixed !important;
+  right: 16px;
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 5;
+}
+
+.photo-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.photo-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
