@@ -21,6 +21,11 @@ export const config = {
   dataDir: path.resolve(REPO_ROOT, env('DATA_DIR', 'data')),
   clientDist: path.resolve(REPO_ROOT, 'client', 'dist'),
   syncIntervalMs: Number(env('SYNC_INTERVAL_MIN', '1')) * 60_000,
+  // Google Drive backup (as the user, via OAuth). See docs/BACKUP.md.
+  oauthClientFile: path.resolve(REPO_ROOT, env('GOOGLE_OAUTH_CLIENT', 'secrets/oauth-client.json')),
+  driveTokenFile: path.resolve(REPO_ROOT, env('GOOGLE_DRIVE_TOKEN', 'secrets/drive-token.json')),
+  backupFolder: env('BACKUP_FOLDER', 'HomeAssets Backup'),
+  backupIntervalMs: Number(env('BACKUP_INTERVAL_HOURS', '1')) * 3_600_000,
 };
 
 export const photosDir = path.join(config.dataDir, 'photos');

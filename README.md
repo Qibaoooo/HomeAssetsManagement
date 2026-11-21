@@ -54,6 +54,12 @@ One-off sync from the command line: `npm run sync`.
 Give the laptop a DHCP reservation on the router so its address stays fixed, then
 open `http://192.168.1.101:8787` on a phone and add it to the home screen.
 
+## Backup to Google Drive
+
+Hourly backup of the database and photos into your Drive, with **Back up now** in Settings
+and `npm run restore` to rebuild `data/` on a new machine. One-time OAuth setup and the
+handling of the secret files are in [docs/BACKUP.md](docs/BACKUP.md).
+
 ## Run on a Mac
 
 See [docs/RUNBOOK-mac.md](docs/RUNBOOK-mac.md). Short version: `bash scripts/mac/setup.sh`,

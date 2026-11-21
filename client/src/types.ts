@@ -63,6 +63,24 @@ export interface SyncResult {
   durationMs: number;
 }
 
+export interface BackupResult {
+  at: string;
+  ok: boolean;
+  error?: string;
+  unchanged: boolean;
+  sqliteBytes: number;
+  photosUploaded: number;
+  photosTotal: number;
+  durationMs: number;
+}
+
+export interface BackupStatus {
+  state: 'ready' | 'no-client' | 'no-token';
+  folder: string;
+  intervalHours: number;
+  last: BackupResult | null;
+}
+
 export interface SyncStatus {
   last: SyncResult | null;
   pending: number;

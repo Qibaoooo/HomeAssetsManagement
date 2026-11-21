@@ -2,17 +2,25 @@
   "name": "home-assets",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["server", "client"],
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:server dev:client",
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w client && npm run build -w server",
     "start": "npm run start -w server",
-    "sync": "npm run sync -w server"
+    "sync": "npm run sync -w server",
+    "drive-auth": "npm run drive-auth -w server",
+    "backup": "npm run backup -w server",
+    "restore": "npm run restore -w server"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

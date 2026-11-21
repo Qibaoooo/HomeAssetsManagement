@@ -4,6 +4,7 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { photosDir } from '../config.js';
 import { buildItem, distinctValues, getItem, insertItem, listItems, setPhoto, updateItem } from '../db.js';
+import { backupSoon } from '../backup.js';
 import { syncNow } from '../sync.js';
 import type { Item, ItemInput, ItemStatus } from '../types.js';
 
@@ -12,6 +13,7 @@ const THUMB_EDGE = 320;
 
 /** Write-through: persist locally, then push to the sheet. The response never waits on a failed sheet. */
 async function pushQuietly(reason: string): Promise<boolean> {
+  backupSoon();
   try {
     return (await syncNow(reason)).ok;
   } catch {
@@ -91,6 +93,7 @@ export async function itemRoutes(app: FastifyInstance) {
       .webp({ quality: 75 }).toFile(path.join(photosDir, `${base.id}.thumb.webp`));
 
     setPhoto(base.id, name);
+    backupSoon();
     return { item: present(getItem(base.id)!) };
   });
 

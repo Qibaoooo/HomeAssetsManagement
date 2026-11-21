@@ -8,7 +8,10 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "sync": "tsx src/cli-sync.ts"
+    "sync": "tsx src/cli-sync.ts",
+    "drive-auth": "tsx src/cli-drive-auth.ts",
+    "backup": "tsx src/cli-backup.ts",
+    "restore": "tsx src/cli-restore.ts"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.3",

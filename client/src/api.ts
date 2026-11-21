@@ -1,4 +1,4 @@
-import type { Item, ItemInput, ItemStatus, Meta, SyncResult, SyncStatus } from './types';
+import type { BackupResult, BackupStatus, Item, ItemInput, ItemStatus, Meta, SyncResult, SyncStatus } from './types';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -36,4 +36,6 @@ export const api = {
   deletePhoto: (id: string) => request<{ item: Item }>(`/api/items/${id}/photo`, { method: 'DELETE' }),
   syncStatus: () => request<SyncStatus>('/api/sync/status'),
   sync: () => request<{ result: SyncResult; pending: number }>('/api/sync', { method: 'POST' }),
+  backupStatus: () => request<BackupStatus>('/api/backup/status'),
+  backup: () => request<{ result: BackupResult }>('/api/backup', { method: 'POST' }),
 };
