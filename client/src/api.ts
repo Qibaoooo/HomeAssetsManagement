@@ -36,6 +36,9 @@ export const api = {
   deletePhoto: (id: string) => request<{ item: Item }>(`/api/items/${id}/photo`, { method: 'DELETE' }),
   syncStatus: () => request<SyncStatus>('/api/sync/status'),
   sync: () => request<{ result: SyncResult; pending: number }>('/api/sync', { method: 'POST' }),
+  categories: () => request<{ category: string; active: number; retired: number }[]>('/api/categories'),
+  renameCategory: (from: string, to: string, updated_by: string) =>
+    request<{ changed: number; synced: boolean }>('/api/categories/rename', json('POST', { from, to, updated_by })),
   backupStatus: () => request<BackupStatus>('/api/backup/status'),
   backup: () => request<{ result: BackupResult }>('/api/backup', { method: 'POST' }),
 };

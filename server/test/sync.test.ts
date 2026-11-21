@@ -139,6 +139,24 @@ test('a row added by hand without an id is imported and given one', async () => 
   assert.equal(sheetRow('Jacket')![col('id')], item.id);
 });
 
+test('renaming a category updates every item and the next sync pushes all of them', async () => {
+  await syncNow('test');
+  db.insertItem(db.buildItem({ category: 'Bedding', type: 'Quilt' }));
+  await syncNow('test');
+
+  const changed = db.renameCategory('Bedding', 'Bedroom', 'tester');
+  assert.equal(changed, 2);
+  assert.ok(db.listItems('all').filter((i) => i.category === 'Bedding').length === 0);
+
+  const r = await syncNow('test');
+  assert.equal(r.pushed, 2);
+  const g = mock.grid();
+  assert.equal(g.filter((row) => row[0] === 'Bedroom').length, 2);
+  assert.equal(g.filter((row) => row[0] === 'Bedding').length, 0);
+  assert.equal(sheetRow('Pillow')![col('updated_by')], 'tester');
+  assert.deepEqual(db.categoryCounts().map((c) => c.category), ['Bedroom', 'Suitcase']);
+});
+
 test('tags are normalised to a comma-separated list without duplicates', () => {
   const item = db.buildItem({ category: 'T', tag: ' mom ,A,mom, b ,' });
   assert.equal(item.tag, 'mom, A, b');

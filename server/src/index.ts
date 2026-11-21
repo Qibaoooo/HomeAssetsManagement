@@ -7,6 +7,7 @@ import path from 'node:path';
 import { config, photosDir } from './config.js';
 import { startBackupScheduler } from './backup.js';
 import { backupRoutes } from './routes/backup.js';
+import { categoryRoutes } from './routes/categories.js';
 import { itemRoutes } from './routes/items.js';
 import { syncRoutes } from './routes/sync.js';
 import { startScheduler } from './sync.js';
@@ -31,6 +32,7 @@ await app.register(fastifyStatic, {
 await app.register(itemRoutes);
 await app.register(syncRoutes);
 await app.register(backupRoutes);
+await app.register(categoryRoutes);
 
 // Built client, if present, with SPA fallback for client-side routes.
 // Files are looked up per request (wildcard route), so a new `vite build` is served without a restart.

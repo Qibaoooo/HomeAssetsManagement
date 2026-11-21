@@ -171,6 +171,22 @@ export function metaSet(key: string, value: string) {
   stmts.metaSet.run(key, value);
 }
 
+/** Bulk rename of a category across every item (active and retired). Rows become dirty for the next sync. */
+const renameStmt = db.prepare(
+  `UPDATE items SET category = @to, updated_at = @at, updated_by = @by, dirty = 1 WHERE category = @from`,
+);
+export function renameCategory(from: string, to: string, by: string): number {
+  return renameStmt.run({ from, to, at: now(), by }).changes;
+}
+export function categoryCounts(): { category: string; active: number; retired: number }[] {
+  return db
+    .prepare(
+      `SELECT category, SUM(status = 'active') AS active, SUM(status = 'retired') AS retired
+       FROM items WHERE category <> '' GROUP BY category ORDER BY category`,
+    )
+    .all() as { category: string; active: number; retired: number }[];
+}
+
 /** Hash of every item row (what a backup protects), independent of bookkeeping tables. */
 export function itemsFingerprint(): string {
   const rows = db.prepare(`SELECT ${ITEM_COLS} FROM items ORDER BY id`).all();

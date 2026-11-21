@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { api } from '../api';
 import PxIcon from '../components/PxIcon.vue';
 import PxSprite from '../components/PxSprite.vue';
@@ -58,6 +58,52 @@ async function syncNow() {
   }
 }
 
+// ---- categories ------------------------------------------------------------
+type CategoryRow = { category: string; active: number; retired: number };
+const categories = ref<CategoryRow[]>([]);
+const renaming = ref<CategoryRow | null>(null);
+const newName = ref('');
+const renameBusy = ref(false);
+
+async function loadCategories() {
+  try {
+    categories.value = await api.categories();
+  } catch {
+    /* shown empty */
+  }
+}
+onMounted(loadCategories);
+
+function startRename(row: CategoryRow) {
+  renaming.value = row;
+  newName.value = row.category;
+}
+const mergeTarget = computed(() => {
+  const t = newName.value.trim();
+  return renaming.value && t && t !== renaming.value.category ? categories.value.find((c) => c.category === t) : undefined;
+});
+const renameValid = computed(() => {
+  const t = newName.value.trim();
+  return !!renaming.value && !!t && t !== renaming.value.category && t.length <= 200;
+});
+async function confirmRename() {
+  if (!renaming.value || !renameValid.value) return;
+  renameBusy.value = true;
+  try {
+    const r = await api.renameCategory(renaming.value.category, newName.value.trim(), settings.displayName || 'unknown');
+    notify(
+      `${r.changed} item${r.changed === 1 ? '' : 's'} moved to “${newName.value.trim()}”` + (r.synced ? '' : '. Sheet sync pending.'),
+      r.synced ? 'success' : 'warning',
+    );
+    renaming.value = null;
+    await Promise.all([loadCategories(), store.load(true)]);
+  } catch (e) {
+    notify(e instanceof Error ? e.message : 'Rename failed', 'error');
+  } finally {
+    renameBusy.value = false;
+  }
+}
+
 const serverHost = window.location.host;
 const fmt = (iso: string) => new Date(iso).toLocaleString();
 const counts = (r: NonNullable<SyncStatus['last']>) =>
@@ -89,6 +135,48 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
           <v-switch v-model="settings.showRetired" label="Show retired items in the list" inset hide-details class="mt-2" />
         </v-card-text>
       </v-card>
+
+      <v-card class="px-panel mb-4" title="Categories">
+        <v-card-text class="pt-0">
+          <div class="text-caption text-medium-emphasis mb-2">
+            Renaming moves every item in the category, in the app and the sheet. Renaming to an existing name merges them.
+          </div>
+          <v-list density="compact" bg-color="transparent" class="px-list py-0">
+            <v-list-item v-for="c in categories" :key="c.category" class="px-0">
+              <v-list-item-title>{{ c.category }}</v-list-item-title>
+              <v-list-item-subtitle>
+                {{ c.active }} active<template v-if="c.retired"> · {{ c.retired }} retired</template>
+              </v-list-item-subtitle>
+              <template #append>
+                <v-btn icon="mdi-pencil-outline" variant="text" size="small" :aria-label="`Rename ${c.category}`" @click="startRename(c)" />
+              </template>
+            </v-list-item>
+          </v-list>
+          <div v-if="!categories.length" class="text-medium-emphasis">No categories yet.</div>
+        </v-card-text>
+      </v-card>
+
+      <v-dialog :model-value="!!renaming" max-width="400" @update:model-value="(v) => !v && (renaming = null)">
+        <v-card v-if="renaming" class="px-panel" :title="`Rename “${renaming.category}”`">
+          <v-card-text>
+            <v-text-field v-model="newName" label="New name" autofocus hide-details="auto" :counter="200" @keyup.enter="confirmRename" />
+            <v-alert v-if="mergeTarget" class="px-alert mt-3" density="compact">
+              “{{ mergeTarget.category }}” already exists. The {{ renaming.active + renaming.retired }} item{{ renaming.active + renaming.retired === 1 ? '' : 's' }}
+              will be merged into it.
+            </v-alert>
+            <div class="text-caption text-medium-emphasis mt-2">
+              Affects {{ renaming.active + renaming.retired }} item{{ renaming.active + renaming.retired === 1 ? '' : 's' }}.
+            </div>
+          </v-card-text>
+          <v-card-actions class="ga-2 px-3 pb-3">
+            <v-spacer />
+            <v-btn class="px-btn px-btn--cream" @click="renaming = null">Cancel</v-btn>
+            <v-btn class="px-btn px-btn--primary" :disabled="!renameValid" :loading="renameBusy" @click="confirmRename">
+              {{ mergeTarget ? 'Merge' : 'Rename' }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
       <v-card class="px-panel" title="Google Sheet sync">
         <v-card-text v-if="status">
