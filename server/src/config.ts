@@ -20,7 +20,7 @@ export const config = {
   keyFile: path.resolve(REPO_ROOT, env('GOOGLE_KEY_FILE', 'secrets/service-account.json')),
   dataDir: path.resolve(REPO_ROOT, env('DATA_DIR', 'data')),
   clientDist: path.resolve(REPO_ROOT, 'client', 'dist'),
-  syncIntervalMs: Number(env('SYNC_INTERVAL_MIN', '5')) * 60_000,
+  syncIntervalMs: Number(env('SYNC_INTERVAL_MIN', '1')) * 60_000,
 };
 
 export const photosDir = path.join(config.dataDir, 'photos');

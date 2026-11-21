@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { api } from '../api';
+import PxIcon from '../components/PxIcon.vue';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
 import { notify } from '../toast';
@@ -42,12 +43,15 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
 
 <template>
   <div class="page">
-    <v-app-bar flat color="primary" density="comfortable">
+    <v-app-bar flat density="comfortable" class="px-appbar">
+      <template #prepend>
+        <PxIcon name="gear" variant="white" :size="32" class="ml-2" />
+      </template>
       <v-app-bar-title>Settings</v-app-bar-title>
     </v-app-bar>
 
     <div class="pa-4">
-      <v-card class="mb-4" title="This device">
+      <v-card class="px-panel mb-4" title="This device">
         <v-card-text>
           <v-text-field
             v-model="settings.displayName"
@@ -56,34 +60,35 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
             persistent-hint
             prepend-inner-icon="mdi-account"
           />
-          <v-switch v-model="settings.showRetired" label="Show retired items in the list" color="primary" hide-details class="mt-2" />
+          <v-switch v-model="settings.showRetired" label="Show retired items in the list" inset hide-details class="mt-2" />
         </v-card-text>
       </v-card>
 
-      <v-card title="Google Sheet sync">
+      <v-card class="px-panel" title="Google Sheet sync">
         <v-card-text v-if="status">
-          <div v-if="status.last" class="mb-2">
-            <v-chip :color="status.last.ok ? 'success' : 'error'" size="small" variant="flat" class="mr-2">
-              {{ status.last.ok ? 'OK' : 'Failed' }}
-            </v-chip>
+          <div v-if="status.last" class="mb-2 d-flex align-center ga-2">
+            <PxIcon :name="status.last.ok ? 'check' : 'cross'" :size="24" />
+            <span class="px-font">{{ status.last.ok ? 'OK' : 'Failed' }}</span>
             <span class="text-medium-emphasis">{{ fmt(status.last.at) }}</span>
-            <div class="mt-1 text-body-2">{{ status.last.ok ? counts(status.last) : status.last.error }}</div>
           </div>
+          <div v-if="status.last" class="text-body-2 mb-2">{{ status.last.ok ? counts(status.last) : status.last.error }}</div>
           <div v-else class="text-medium-emphasis mb-2">No sync has run yet.</div>
-          <v-alert v-if="status.pending" type="warning" variant="tonal" density="compact" class="mb-2">
+          <v-alert v-if="status.pending" class="px-alert mb-2" density="compact">
             {{ status.pending }} change{{ status.pending > 1 ? 's' : '' }} waiting to be written to the sheet.
           </v-alert>
         </v-card-text>
-        <v-card-actions>
-          <v-btn color="primary" variant="flat" prepend-icon="mdi-sync" :loading="syncing" @click="syncNow">Sync now</v-btn>
-          <v-btn variant="text" @click="refresh">Refresh</v-btn>
+        <v-card-actions class="px-3 pb-3 ga-2">
+          <v-btn class="px-btn" :loading="syncing" @click="syncNow">
+            <PxIcon name="star" :size="20" class="mr-2" />Sync now
+          </v-btn>
+          <v-btn class="px-btn px-btn--cream" @click="refresh">Refresh</v-btn>
         </v-card-actions>
-        <v-expansion-panels v-if="status?.log.length" variant="accordion">
+        <v-expansion-panels v-if="status?.log.length" variant="accordion" flat>
           <v-expansion-panel title="Recent log">
             <v-expansion-panel-text>
               <div v-for="(l, i) in status.log" :key="i" class="text-caption mb-1">
                 <span class="text-medium-emphasis">{{ fmt(l.at) }}</span>
-                <v-chip :color="l.level === 'error' ? 'error' : l.level === 'warn' ? 'warning' : undefined" size="x-small" class="mx-1">{{ l.level }}</v-chip>
+                <PxIcon :name="l.level === 'error' ? 'cross' : l.level === 'warn' ? 'exclaim' : 'check'" :size="16" class="mx-1" />
                 {{ l.message }}
               </div>
             </v-expansion-panel-text>
@@ -91,8 +96,11 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
         </v-expansion-panels>
       </v-card>
 
-      <div class="text-caption text-medium-emphasis text-center mt-6">
+      <div class="px-font text-caption text-medium-emphasis text-center mt-6">
         Server: {{ serverHost }}
+      </div>
+      <div class="text-caption text-medium-emphasis text-center mt-1">
+        UI art: Sprout Lands by Cup Nooble
       </div>
     </div>
   </div>

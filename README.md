@@ -7,6 +7,11 @@ holds photos.
 
 See [docs/SCOPE.md](docs/SCOPE.md) for the agreed scope and decisions.
 
+UI art is the free **Sprout Lands UI Pack** by Cup Nooble (pixel font, panels, buttons,
+icons). Its licence is non-commercial and forbids redistribution of the assets, so this
+repo must stay a private, personal project. See `client/src/assets/sprout/LICENSE-sprout-lands.txt`.
+Sprites are sliced from the raw sheets by `python scripts/slice-sprout.py`.
+
 ## Layout
 
 ```
@@ -52,7 +57,7 @@ open `http://192.168.1.101:8787` on a phone and add it to the home screen.
 ## How sync works
 
 - The app reads and writes SQLite. Every write is pushed to the sheet immediately.
-- Every 5 minutes (and on **Sync now** in Settings) the sheet is pulled. Rows are
+- Every minute (and on **Sync now** in Settings) the sheet is pulled. Rows are
   matched by the hidden `id` column. Hand edits in the sheet win when the local row
   is clean; an unpushed app edit wins over a hand edit and the overlap is logged.
 - A row deleted by hand in the sheet is marked *retired* locally, never re-added.

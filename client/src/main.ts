@@ -5,16 +5,33 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi';
 import 'vuetify/styles';
 import '@mdi/font/css/materialdesignicons.css';
 import './style.css';
+import './sprout.css';
 import App from './App.vue';
 import { router } from './router';
 
 const vuetify = createVuetify({
   icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
   theme: {
-    defaultTheme: 'light',
+    defaultTheme: 'sprout',
     themes: {
-      light: { colors: { primary: '#5c6bc0', secondary: '#26a69a' } },
-      dark: { colors: { primary: '#7986cb', secondary: '#4db6ac' } },
+      sprout: {
+        dark: false,
+        colors: {
+          background: '#f3e5c2',
+          surface: '#f3e5c2',
+          'surface-variant': '#e8cfa6',
+          'on-surface': '#474a4b',
+          'on-background': '#474a4b',
+          primary: '#aa7959',
+          'on-primary': '#fbfbf6',
+          secondary: '#c0d470',
+          'on-secondary': '#6b4b5b',
+          success: '#7f9a3c',
+          warning: '#c49a6c',
+          error: '#c9707a',
+          info: '#818b83',
+        },
+      },
     },
   },
   defaults: {

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api';
+import PxIcon from '../components/PxIcon.vue';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
 import { notify } from '../toast';
@@ -86,7 +87,7 @@ function clearPhoto() {
 }
 onBeforeUnmount(() => previewUrl.value && URL.revokeObjectURL(previewUrl.value));
 
-const shownPhoto = computed(() => previewUrl.value ?? (removePhoto.value ? null : existing.value?.photo_url ?? null));
+const shownPhoto = computed(() => previewUrl.value ?? (removePhoto.value ? null : (existing.value?.photo_url ?? null)));
 
 // ---- save ----------------------------------------------------------------
 const valid = computed(() => !!(form.category.trim() || form.type.trim() || form.design.trim()));
@@ -143,35 +144,47 @@ const typeSuggestions = computed(() => {
 
 <template>
   <div class="page">
-    <v-app-bar flat color="primary" density="comfortable">
+    <v-app-bar flat density="comfortable" class="px-appbar">
       <template #prepend>
-        <v-btn icon="mdi-arrow-left" @click="router.back()" />
+        <v-btn variant="text" class="px-btn px-btn--cream px-btn--icon ml-2" aria-label="Back" @click="router.back()">
+          <PxIcon name="minus" :size="24" />
+        </v-btn>
       </template>
       <v-app-bar-title>{{ isNew ? 'New item' : 'Edit item' }}</v-app-bar-title>
       <template #append>
-        <v-btn variant="text" :disabled="!valid" :loading="saving" @click="save">Save</v-btn>
+        <v-btn class="px-btn mr-2" :disabled="!valid" :loading="saving" @click="save">
+          <PxIcon name="check" :size="20" class="mr-1" />Save
+        </v-btn>
       </template>
     </v-app-bar>
 
-    <v-progress-linear v-if="loading" indeterminate color="primary" />
+    <v-progress-linear v-if="loading" indeterminate />
 
     <v-form v-else class="pa-4" @submit.prevent="save">
       <!-- photo -->
-      <div class="photo-frame mb-2">
-        <img v-if="shownPhoto" :src="shownPhoto" alt="item photo" />
-        <v-icon v-else size="56" color="grey">mdi-camera-plus-outline</v-icon>
+      <div class="px-panel px-panel--dark mb-2">
+        <div class="photo-frame" :class="{ 'photo-frame--empty': !shownPhoto }">
+          <img v-if="shownPhoto" :src="shownPhoto" alt="item photo" />
+          <PxIcon v-else name="question" variant="light" :size="64" />
+        </div>
       </div>
       <div class="d-flex ga-2 mb-5">
-        <v-btn variant="tonal" prepend-icon="mdi-camera" class="flex-grow-1" @click="cameraInput?.click()">Take photo</v-btn>
-        <v-btn variant="tonal" prepend-icon="mdi-image-multiple" class="flex-grow-1" @click="galleryInput?.click()">Choose</v-btn>
-        <v-btn v-if="shownPhoto" icon="mdi-delete-outline" variant="text" color="error" @click="clearPhoto" />
+        <v-btn class="px-btn px-btn--cream flex-grow-1" @click="cameraInput?.click()">
+          <v-icon start>mdi-camera</v-icon>Take photo
+        </v-btn>
+        <v-btn class="px-btn px-btn--cream flex-grow-1" @click="galleryInput?.click()">
+          <v-icon start>mdi-image-multiple</v-icon>Choose
+        </v-btn>
+        <v-btn v-if="shownPhoto" class="px-btn px-btn--grey px-btn--icon" aria-label="Remove photo" @click="clearPhoto">
+          <PxIcon name="cross" :size="20" />
+        </v-btn>
       </div>
       <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onPicked" />
       <input ref="galleryInput" type="file" accept="image/*" hidden @change="onPicked" />
 
       <v-combobox v-model="form.category" label="Category" :items="store.meta.categories" autocapitalize="words" />
       <v-combobox v-model="form.type" label="Type" :items="typeSuggestions" autocapitalize="words" />
-      <v-text-field v-model="form.design" label="Design / colour" autocapitalize="words" />
+      <v-text-field v-model="form.design" label="Design" autocapitalize="words" />
       <v-combobox v-model="form.brand" label="Brand" :items="store.meta.brands" autocapitalize="words" />
 
       <v-row dense>
@@ -183,49 +196,38 @@ const typeSuggestions = computed(() => {
         </v-col>
       </v-row>
 
-      <v-text-field
-        v-model.number="form.quantity"
-        label="Quantity"
-        type="number"
-        inputmode="numeric"
-        min="0"
-        prepend-inner-icon="mdi-minus"
-        append-inner-icon="mdi-plus"
-        @click:prepend-inner="step(-1)"
-        @click:append-inner="step(1)"
-      />
+      <v-text-field v-model.number="form.quantity" label="Quantity" type="number" inputmode="numeric" min="0" class="qty">
+        <template #prepend-inner>
+          <button type="button" class="qty-btn" aria-label="Decrease" @click="step(-1)"><PxIcon name="minus" :size="16" /></button>
+        </template>
+        <template #append-inner>
+          <button type="button" class="qty-btn" aria-label="Increase" @click="step(1)"><PxIcon name="plus" :size="16" /></button>
+        </template>
+      </v-text-field>
 
-      <v-combobox v-model="form.tag" label="Tag (set or owner)" :items="store.meta.tags" />
+      <v-combobox v-model="form.tag" label="Tag" :items="store.meta.tags" />
 
       <v-row dense>
         <v-col cols="7">
-          <v-text-field v-model="form.purchase_date" label="Purchased on" type="date" clearable />
+          <v-text-field v-model="form.purchase_date" label="purchase_date" type="date" clearable />
         </v-col>
         <v-col cols="5">
-          <v-text-field v-model.number="form.price" label="Price" type="number" inputmode="decimal" step="0.01" min="0" prefix="$" clearable />
+          <v-text-field v-model.number="form.price" label="price" type="number" inputmode="decimal" step="0.01" min="0" prefix="$" clearable />
         </v-col>
       </v-row>
 
       <v-textarea v-model="form.remarks" label="Remarks" rows="2" auto-grow />
 
-      <v-btn type="submit" color="primary" size="large" block :disabled="!valid" :loading="saving" class="mt-2">
-        {{ isNew ? 'Add item' : 'Save changes' }}
+      <v-btn type="submit" class="px-btn px-btn--brown mt-2" size="large" block :disabled="!valid" :loading="saving">
+        <PxIcon name="check" variant="white" :size="20" class="mr-2" />{{ isNew ? 'Add item' : 'Save changes' }}
       </v-btn>
 
       <template v-if="existing">
-        <v-btn
-          v-if="existing.status === 'active'"
-          variant="text"
-          color="error"
-          block
-          class="mt-3"
-          prepend-icon="mdi-archive-arrow-down-outline"
-          @click="confirmRetire = true"
-        >
-          Retire this item
+        <v-btn v-if="existing.status === 'active'" variant="text" color="error" block class="mt-3" @click="confirmRetire = true">
+          <PxIcon name="ban" :size="20" class="mr-2" />Retire this item
         </v-btn>
-        <v-btn v-else variant="tonal" color="secondary" block class="mt-3" prepend-icon="mdi-archive-arrow-up-outline" @click="setStatus('active')">
-          Restore to active
+        <v-btn v-else class="px-btn px-btn--cream mt-3" block @click="setStatus('active')">
+          <PxIcon name="star" :size="20" class="mr-2" />Restore to active
         </v-btn>
         <div class="text-caption text-medium-emphasis text-center mt-4">
           Last updated {{ new Date(existing.updated_at).toLocaleString() }}
@@ -235,14 +237,39 @@ const typeSuggestions = computed(() => {
     </v-form>
 
     <v-dialog v-model="confirmRetire" max-width="360">
-      <v-card title="Retire this item?">
+      <v-card class="px-panel" title="Retire this item?">
         <v-card-text>It stays in the sheet marked <em>retired</em> and is hidden from the list by default.</v-card-text>
-        <v-card-actions>
+        <v-card-actions class="ga-2 px-3 pb-3">
           <v-spacer />
-          <v-btn @click="confirmRetire = false">Cancel</v-btn>
-          <v-btn color="error" variant="flat" :loading="saving" @click="setStatus('retired')">Retire</v-btn>
+          <v-btn class="px-btn px-btn--cream" @click="confirmRetire = false">Cancel</v-btn>
+          <v-btn class="px-btn px-btn--brown" :loading="saving" @click="setStatus('retired')">Retire</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
   </div>
 </template>
+
+<style scoped>
+.qty-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--sp-sand);
+  border: 2px solid var(--sp-brown);
+  border-radius: 3px;
+  box-shadow: 0 2px 0 var(--sp-brown-dark);
+  cursor: pointer;
+  padding: 0;
+}
+.qty-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+.qty :deep(input) {
+  text-align: center;
+  font-family: 'Sprout', monospace;
+  font-size: 21px;
+}
+</style>

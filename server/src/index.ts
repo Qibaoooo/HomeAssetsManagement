@@ -26,9 +26,10 @@ await app.register(itemRoutes);
 await app.register(syncRoutes);
 
 // Built client, if present, with SPA fallback for client-side routes.
+// Files are looked up per request (wildcard route), so a new `vite build` is served without a restart.
 const hasClient = fs.existsSync(path.join(config.clientDist, 'index.html'));
 if (hasClient) {
-  await app.register(fastifyStatic, { root: config.clientDist, prefix: '/', wildcard: false });
+  await app.register(fastifyStatic, { root: config.clientDist, prefix: '/', decorateReply: true, cacheControl: false });
   app.setNotFoundHandler((req, reply) => {
     if (req.method === 'GET' && !req.url.startsWith('/api/') && !req.url.startsWith('/photos/')) {
       return reply.sendFile('index.html');

@@ -9,13 +9,13 @@
   in the app unless *Show retired* is on in Settings. There is no hard delete in the app.
 - **Who edited what:** set *Your name* in Settings once per phone. It is written to `updated_by`.
 - **Pending changes:** if the laptop cannot reach Google, saves still succeed locally and show a
-  cloud icon in the list. They are pushed on the next successful sync (every 5 minutes, or
+  cloud icon in the list. They are pushed on the next successful sync (every minute, or
   *Sync now* in Settings).
 
 ## Editing the sheet by hand
 
 Safe:
-- Change any value in an existing row. It is picked up within 5 minutes and stamped
+- Change any value in an existing row. It is picked up within a minute and stamped
   `updated_by = sheet`.
 - Add a row at the bottom. Leave `id`, `updated_at`, `status` empty; the sync fills them in.
 - Sort, filter, freeze, colour cells, reorder columns. Rows are matched by `id`, columns by
@@ -29,7 +29,7 @@ Not safe:
 - Renaming an existing header (for example `Remarks` to `Notes`). The sync sees a missing
   column and appends a new empty `Remarks`. Rename the field in code instead.
 - Formulas inside data rows. The app writes plain values back and the formula is lost.
-- Changing a row in the sheet and in the app within the same 5-minute window. The app edit
+- Changing a row in the sheet and in the app within the same one-minute window. The app edit
   wins and the sync log records a conflict.
 - Applying a date format to `purchase_date`. Keep it plain text `YYYY-MM-DD`.
 - Prices with a thousands comma: `1,250` is read as `1250`, which is fine, but `12,50` is

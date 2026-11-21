@@ -1,0 +1,305 @@
+/* Sprout Lands theme: pixel font, warm palette, 9-slice panels and buttons.
+   Assets: client/src/assets/sprout (Cup Nooble, non-commercial licence). */
+
+@font-face {
+  font-family: 'Sprout';
+  src: url('./assets/fonts/sprout-lands.ttf') format('truetype');
+  font-display: block;
+}
+
+:root {
+  --sp-cream: #f3e5c2;
+  --sp-paper: #fbfbf6;
+  --sp-sand: #e8cfa6;
+  --sp-tan: #dcb98a;
+  --sp-tan-dark: #c49a6c;
+  --sp-brown: #aa7959;
+  --sp-brown-dark: #90625d;
+  --sp-plum: #6b4b5b;
+  --sp-ink: #474a4b;
+  --sp-muted: #818b83;
+  --sp-green: #c0d470;
+  --sp-green-dark: #7f9a3c;
+  --sp-rose: #c9707a;
+}
+
+/* ---- typography ------------------------------------------------------- */
+.px-font,
+.v-app-bar-title,
+.v-list-subheader,
+.v-btn,
+.v-chip,
+.v-bottom-navigation .v-btn__content,
+.v-card-title,
+.v-expansion-panel-title,
+.v-tab {
+  font-family: 'Sprout', 'Courier New', monospace !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  -webkit-font-smoothing: none;
+  font-weight: 400 !important;
+}
+.v-btn,
+.v-chip {
+  font-size: 14px !important;
+}
+.v-app-bar-title {
+  font-size: 28px;
+  line-height: 1;
+}
+.v-list-subheader {
+  font-size: 14px;
+  color: var(--sp-brown-dark) !important;
+  min-height: 32px;
+}
+.v-card-title {
+  font-size: 21px;
+  color: var(--sp-plum);
+}
+
+/* ---- pixel images ----------------------------------------------------- */
+.px {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* ---- panels: 9-slice from the inventory block tiles ------------------ */
+.px-panel {
+  border-style: solid;
+  border-width: 8px 8px 16px 8px;
+  border-image: url('./assets/sprout/panels/large-light.png') 4 4 8 4 fill / 8px 8px 16px 8px stretch;
+  image-rendering: pixelated;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+.px-panel--mid {
+  border-image-source: url('./assets/sprout/panels/large-mid.png');
+}
+.px-panel--dark {
+  border-image-source: url('./assets/sprout/panels/large-dark.png');
+}
+/* small slot frame, e.g. around thumbnails */
+.px-slot {
+  border-style: solid;
+  border-width: 8px 8px 16px 8px;
+  border-image: url('./assets/sprout/panels/medium-mid.png') 4 4 8 4 fill / 8px 8px 16px 8px stretch;
+  image-rendering: pixelated;
+  background: transparent;
+}
+
+/* ---- buttons: 9-slice from the 26x26 square buttons ------------------ */
+.px-btn {
+  border-style: solid !important;
+  border-width: 6px 6px 12px 6px !important;
+  border-image: url('./assets/sprout/buttons/tan-up.png') 3 3 6 3 fill / 6px 6px 12px 6px stretch !important;
+  image-rendering: pixelated;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  color: var(--sp-plum) !important;
+  height: auto !important;
+  min-height: 44px;
+  padding: 0 14px !important;
+}
+.px-btn:active,
+.px-btn.v-btn--active {
+  border-image-source: url('./assets/sprout/buttons/tan-down.png') !important;
+}
+.px-btn--cream {
+  border-image-source: url('./assets/sprout/buttons/cream-up.png') !important;
+}
+.px-btn--cream:active {
+  border-image-source: url('./assets/sprout/buttons/cream-down.png') !important;
+}
+.px-btn--brown {
+  border-image-source: url('./assets/sprout/buttons/brown-up.png') !important;
+  color: var(--sp-paper) !important;
+}
+.px-btn--brown:active {
+  border-image-source: url('./assets/sprout/buttons/brown-down.png') !important;
+}
+.px-btn--grey {
+  border-image-source: url('./assets/sprout/buttons/grey-up.png') !important;
+  color: var(--sp-ink) !important;
+}
+.px-btn--grey:active {
+  border-image-source: url('./assets/sprout/buttons/grey-down.png') !important;
+}
+.px-btn .v-btn__overlay,
+.px-btn .v-btn__underlay {
+  display: none;
+}
+.px-btn.v-btn--disabled {
+  opacity: 0.55;
+}
+/* square icon-only button */
+.px-btn--icon {
+  min-width: 44px;
+  padding: 0 !important;
+}
+
+/* ---- app chrome ------------------------------------------------------- */
+.v-application {
+  background: var(--sp-cream) !important;
+  color: var(--sp-ink) !important;
+}
+.px-appbar {
+  background: var(--sp-tan-dark) !important;
+  color: var(--sp-paper) !important;
+  border-bottom: 2px solid var(--sp-brown-dark);
+  box-shadow: 0 2px 0 var(--sp-plum) !important;
+}
+.px-nav {
+  background: var(--sp-sand) !important;
+  border-top: 2px solid var(--sp-brown);
+  box-shadow: 0 -2px 0 var(--sp-tan) !important;
+  height: auto !important;
+}
+.px-nav .v-btn {
+  color: var(--sp-brown-dark) !important;
+  font-size: 12px !important;
+  min-height: 56px;
+}
+.px-nav .v-btn--active {
+  color: var(--sp-plum) !important;
+}
+.px-nav .v-btn--active .v-btn__content::after {
+  content: '';
+  display: block;
+  width: 24px;
+  height: 4px;
+  margin-top: 2px;
+  background: var(--sp-green);
+  box-shadow: 0 2px 0 var(--sp-green-dark);
+}
+.px-nav .v-btn__overlay {
+  display: none;
+}
+
+/* ---- inputs ----------------------------------------------------------- */
+.v-field--variant-outlined {
+  --v-field-border-width: 2px;
+  --v-field-border-opacity: 1;
+}
+.v-field--variant-outlined .v-field__outline {
+  color: var(--sp-brown) !important;
+}
+.v-field--variant-outlined.v-field--focused .v-field__outline {
+  color: var(--sp-green-dark) !important;
+}
+.v-field--variant-outlined .v-field__overlay {
+  background: var(--sp-paper) !important;
+  opacity: 1 !important;
+}
+.v-field__outline__start,
+.v-field__outline__end {
+  border-radius: 3px 0 0 3px !important;
+}
+.v-field__outline__end {
+  border-radius: 0 3px 3px 0 !important;
+}
+.v-label {
+  color: var(--sp-brown-dark) !important;
+  opacity: 1 !important;
+}
+
+/* ---- chips ------------------------------------------------------------ */
+.v-chip.v-chip--variant-tonal,
+.v-chip.v-chip--variant-outlined,
+.v-chip.v-chip--variant-flat {
+  background: var(--sp-paper) !important;
+  color: var(--sp-brown-dark) !important;
+  border: 2px solid var(--sp-brown) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 2px 0 var(--sp-tan) !important;
+}
+.v-chip .v-chip__underlay,
+.v-chip .v-chip__overlay {
+  display: none;
+}
+.v-chip.px-chip--on {
+  background: var(--sp-green) !important;
+  color: var(--sp-plum) !important;
+  border-color: var(--sp-green-dark) !important;
+  box-shadow: 0 2px 0 var(--sp-green-dark) !important;
+}
+.v-chip.px-chip--qty {
+  background: var(--sp-sand) !important;
+  box-shadow: 0 2px 0 var(--sp-brown) !important;
+}
+.v-chip.px-chip--muted {
+  background: var(--sp-tan) !important;
+  color: var(--sp-paper) !important;
+  border-color: var(--sp-brown-dark) !important;
+}
+
+/* ---- lists ------------------------------------------------------------ */
+.px-list .v-list-item {
+  border-bottom: 2px dotted var(--sp-tan);
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.px-list .v-list-item:last-child {
+  border-bottom: none;
+}
+.px-list .v-list-item-title {
+  font-weight: 600;
+  color: var(--sp-ink);
+}
+.px-list .v-list-item-subtitle {
+  color: var(--sp-muted);
+}
+.px-list .v-list-item__overlay {
+  display: none;
+}
+.px-list .v-list-item:active {
+  background: rgba(170, 121, 89, 0.12);
+}
+
+/* ---- misc Vuetify overrides ------------------------------------------ */
+.v-switch .v-selection-control__input .v-icon {
+  color: var(--sp-brown-dark);
+}
+.v-switch--inset .v-switch__track {
+  background: var(--sp-tan) !important;
+  opacity: 1 !important;
+  border: 2px solid var(--sp-brown);
+}
+.v-selection-control--dirty .v-switch__track {
+  background: var(--sp-green) !important;
+  border-color: var(--sp-green-dark) !important;
+}
+.v-snackbar__wrapper.px-panel {
+  color: var(--sp-ink) !important;
+  min-width: 0;
+}
+.v-overlay__scrim {
+  background: var(--sp-plum) !important;
+}
+.v-alert.px-alert {
+  background: var(--sp-paper) !important;
+  color: var(--sp-brown-dark) !important;
+  border: 2px solid var(--sp-brown) !important;
+  border-radius: 3px !important;
+}
+.v-alert.px-alert--error {
+  border-color: var(--sp-rose) !important;
+  color: var(--sp-rose) !important;
+}
+.v-progress-linear__determinate,
+.v-progress-linear__indeterminate .long,
+.v-progress-linear__indeterminate .short {
+  background: var(--sp-green-dark) !important;
+}
+.v-expansion-panel {
+  background: transparent !important;
+  color: var(--sp-ink) !important;
+}
+.v-expansion-panel-title {
+  font-size: 14px;
+  color: var(--sp-brown-dark);
+}
+.text-medium-emphasis {
+  color: var(--sp-muted) !important;
+}
