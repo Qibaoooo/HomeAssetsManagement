@@ -15,7 +15,8 @@ const settings = useSettings();
 // Vuetify's clear button sets the model to null, so the type admits it.
 const search = ref<string | null>('');
 const category = ref<string | null>(null);
-const location = ref<string | null>(null);
+/** Selected locations; an item matches if it is in any of them (OR). */
+const location = ref<string[]>([]);
 
 onMounted(() => store.load());
 onActivated(() => store.load());
@@ -84,7 +85,7 @@ const locationsForCategory = computed(() => {
   }
   return [...set].sort((a, b) => a.localeCompare(b));
 });
-watch(category, () => (location.value = null));
+watch(category, () => (location.value = []));
 
 // Each category shows 3 items until expanded; the active category filter shows everything.
 const PREVIEW = 3;
@@ -104,7 +105,7 @@ const visible = computed(() => {
   return store.items.filter((i) => {
     if (!settings.showRetired && i.status === 'retired') return false;
     if (category.value && i.category !== category.value) return false;
-    if (location.value && i.location !== location.value) return false;
+    if (location.value.length && !location.value.includes(i.location)) return false;
     if (wanted.length) {
       const keys = tagKeys(i);
       if (!wanted.every((t) => keys.has(t))) return false;
@@ -135,7 +136,7 @@ const PLACEHOLDER = 'emoji:cat-purple';
 function clearFilters() {
   search.value = '';
   category.value = null;
-  location.value = null;
+  location.value = [];
   selectedTags.value = [];
 }
 
@@ -179,7 +180,7 @@ watch(itemsReset, () => {
           #{{ t.label }}<span class="tag-count">{{ t.count }}</span>
         </v-chip>
       </v-chip-group>
-      <v-chip-group v-if="locationsForCategory.length" v-model="location" selected-class="px-chip--on">
+      <v-chip-group v-if="locationsForCategory.length" v-model="location" multiple selected-class="px-chip--on">
         <v-chip v-for="l in locationsForCategory" :key="l" :value="l" filter size="small" variant="outlined">
           <v-icon start size="small">mdi-map-marker</v-icon>{{ l }}
         </v-chip>
