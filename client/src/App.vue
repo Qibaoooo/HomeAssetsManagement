@@ -2,9 +2,13 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import PxIcon from './components/PxIcon.vue';
+import { requestItemsReset } from './signals';
 import { toast } from './toast';
 
 const route = useRoute();
+function onItemsTab() {
+  if (route.name === 'items') requestItemsReset();
+}
 const tab = computed(() => (route.name === 'settings' ? 'settings' : route.name === 'item-new' ? 'add' : 'items'));
 const toastOpen = computed({
   get: () => toast.value !== null,
@@ -32,7 +36,7 @@ const toastIcon = computed(() =>
     </v-main>
 
     <v-bottom-navigation :model-value="tab" grow class="px-nav">
-      <v-btn value="items" :to="{ name: 'items' }">
+      <v-btn value="items" :to="{ name: 'items' }" @click="onItemsTab">
         <PxIcon name="house" :size="24" />
         <span>Items</span>
       </v-btn>

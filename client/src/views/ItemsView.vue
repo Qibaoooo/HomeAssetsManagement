@@ -2,6 +2,7 @@
 import { computed, onActivated, onMounted, ref, watch } from 'vue';
 import PxIcon from '../components/PxIcon.vue';
 import PxSprite from '../components/PxSprite.vue';
+import { itemsReset } from '../signals';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
 import type { Item } from '../types';
@@ -82,6 +83,14 @@ function clearFilters() {
   category.value = null;
   location.value = null;
 }
+
+// Items tab tapped while already here: back to a fresh landing.
+watch(itemsReset, () => {
+  clearFilters();
+  expanded.value = new Set();
+  window.scrollTo({ top: 0 });
+  store.load(true);
+});
 </script>
 
 <template>
