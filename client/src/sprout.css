@@ -74,7 +74,8 @@
 }
 
 /* ---- buttons ---------------------------------------------------------- */
-.v-btn {
+/* Vuetify's own button CSS can load after this file (lazy component styles), so be more specific. */
+.v-application .v-btn {
   text-transform: none;
   letter-spacing: 0;
 }

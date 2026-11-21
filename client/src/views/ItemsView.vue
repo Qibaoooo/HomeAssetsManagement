@@ -24,6 +24,43 @@ const norm = (s: string) => s.toLowerCase();
 const haystack = (i: Item) =>
   norm([i.category, i.type, i.design, i.brand, i.location, i.size, i.remarks, i.tag].join(' '));
 
+// ---- tags ----------------------------------------------------------------
+const tagList = (i: Item) => i.tag.split(',').map((t) => t.trim()).filter((t) => t && t !== '-');
+const tagKeys = (i: Item) => new Set(tagList(i).map(norm));
+
+/** Selected tag filters (lower-cased); an item must carry all of them. */
+const selectedTags = ref<string[]>([]);
+const toggleTag = (t: string) => {
+  const k = norm(t);
+  selectedTags.value = selectedTags.value.includes(k) ? selectedTags.value.filter((x) => x !== k) : [...selectedTags.value, k];
+};
+
+/** Every tag in use, with its display spelling and item count, most used first. */
+const tagOptions = computed(() => {
+  const map = new Map<string, { label: string; count: number }>();
+  for (const i of store.items) {
+    if (!settings.showRetired && i.status === 'retired') continue;
+    for (const t of tagList(i)) {
+      const k = norm(t);
+      const e = map.get(k);
+      if (e) e.count++;
+      else map.set(k, { label: t, count: 1 });
+    }
+  }
+  return [...map.entries()]
+    .map(([key, v]) => ({ key, ...v }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+});
+
+/** Search text: words starting with # are exact tag filters, the rest is free text. */
+const parsedSearch = computed(() => {
+  const words = norm((search.value ?? '').trim()).split(/\s+/).filter(Boolean);
+  return {
+    tags: words.filter((w) => w.startsWith('#') && w.length > 1).map((w) => w.slice(1)),
+    text: words.filter((w) => !w.startsWith('#')).join(' '),
+  };
+});
+
 // Location chips belong to the chosen category: only its locations, and none without a category.
 const locationsForCategory = computed(() => {
   if (!category.value) return [];
@@ -49,12 +86,17 @@ const isOpen = (name: string) => !!category.value || expanded.value.has(name);
 const shown = (g: { name: string; items: Item[] }) => (isOpen(g.name) ? g.items : g.items.slice(0, PREVIEW));
 
 const visible = computed(() => {
-  const q = norm((search.value ?? '').trim());
+  const { tags: searchTags, text } = parsedSearch.value;
+  const wanted = [...new Set([...selectedTags.value, ...searchTags])];
   return store.items.filter((i) => {
     if (!settings.showRetired && i.status === 'retired') return false;
     if (category.value && i.category !== category.value) return false;
     if (location.value && i.location !== location.value) return false;
-    return !q || haystack(i).includes(q);
+    if (wanted.length) {
+      const keys = tagKeys(i);
+      if (!wanted.every((t) => keys.has(t))) return false;
+    }
+    return !text || haystack(i).includes(text);
   });
 });
 
@@ -71,9 +113,7 @@ const groups = computed(() => {
 });
 
 const title = (i: Item) => [i.type, i.design && i.design !== '-' ? i.design : ''].filter(Boolean).join(' · ') || i.category;
-const tagList = (i: Item) => i.tag.split(',').map((t) => t.trim()).filter((t) => t && t !== '-');
-const subtitle = (i: Item) =>
-  [i.brand, i.location, i.size, ...tagList(i).map((t) => `#${t}`)].filter(Boolean).join(' · ');
+const subtitle = (i: Item) => [i.brand, i.location, i.size].filter(Boolean).join(' · ');
 const totalActive = computed(() => store.active.length);
 
 /** One standard placeholder for items without a photo. */
@@ -83,6 +123,7 @@ function clearFilters() {
   search.value = '';
   category.value = null;
   location.value = null;
+  selectedTags.value = [];
 }
 
 // Items tab tapped while already here: back to a fresh landing.
@@ -111,7 +152,7 @@ watch(itemsReset, () => {
     <div class="px-4 pt-3 pb-1 sticky">
       <v-text-field
         v-model="search"
-        placeholder="Search type, design, brand, remarks…"
+        placeholder="Search… or #tag"
         prepend-inner-icon="mdi-magnify"
         clearable
         hide-details
@@ -119,6 +160,11 @@ watch(itemsReset, () => {
       />
       <v-chip-group v-model="category" class="mt-1" selected-class="px-chip--on" column>
         <v-chip v-for="c in store.meta.categories" :key="c" :value="c" filter size="small">{{ c }}</v-chip>
+      </v-chip-group>
+      <v-chip-group v-if="tagOptions.length" v-model="selectedTags" multiple selected-class="px-chip--on" class="tag-row">
+        <v-chip v-for="t in tagOptions" :key="t.key" :value="t.key" filter size="small" variant="outlined">
+          #{{ t.label }}<span class="tag-count">{{ t.count }}</span>
+        </v-chip>
       </v-chip-group>
       <v-chip-group v-if="locationsForCategory.length" v-model="location" selected-class="px-chip--on">
         <v-chip v-for="l in locationsForCategory" :key="l" :value="l" filter size="small" variant="outlined">
@@ -154,7 +200,20 @@ watch(itemsReset, () => {
               </div>
             </template>
             <v-list-item-title>{{ title(i) }}</v-list-item-title>
-            <v-list-item-subtitle>{{ subtitle(i) || '—' }}</v-list-item-subtitle>
+            <v-list-item-subtitle>
+              <span v-if="subtitle(i) || !tagList(i).length">{{ subtitle(i) || '—' }}</span>
+              <button
+                v-for="t in tagList(i)"
+                :key="t"
+                type="button"
+                class="tag-link"
+                :class="{ 'tag-link--on': selectedTags.includes(t.toLowerCase()) }"
+                :title="`Filter by #${t}`"
+                @click.prevent.stop="toggleTag(t)"
+              >
+                #{{ t }}
+              </button>
+            </v-list-item-subtitle>
             <template #append>
               <div class="d-flex flex-column align-end ga-1">
                 <v-chip v-if="i.quantity != null && i.quantity !== 1" size="small" class="px-chip--qty">×{{ i.quantity }}</v-chip>
@@ -219,6 +278,31 @@ watch(itemsReset, () => {
   outline: 2px solid var(--sp-green-dark);
   outline-offset: 2px;
   border-radius: 8px;
+}
+.tag-row :deep(.v-slide-group__content) {
+  padding-bottom: 2px;
+}
+.tag-count {
+  margin-left: 4px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.tag-link {
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  margin-left: 6px;
+  font: inherit;
+  color: var(--sp-brown);
+  cursor: pointer;
+  border-radius: 4px;
+}
+.tag-link--on {
+  background: var(--sp-green);
+  color: var(--sp-plum);
+}
+.tag-link:focus-visible {
+  outline: 2px solid var(--sp-green-dark);
 }
 .show-more {
   color: var(--sp-brown-dark) !important;
