@@ -29,7 +29,7 @@ body {
   overflow: hidden;
   border-radius: 11px;
 }
-.photo-frame img {
+.photo-frame img:not(.px-icon) {
   width: 100%;
   height: 100%;
   object-fit: cover;

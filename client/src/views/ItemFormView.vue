@@ -146,9 +146,7 @@ const typeSuggestions = computed(() => {
   <div class="page">
     <v-app-bar flat density="comfortable" class="px-appbar">
       <template #prepend>
-        <v-btn variant="text" class="px-btn px-btn--cream px-btn--icon ml-2" aria-label="Back" @click="router.back()">
-          <PxIcon name="minus" :size="24" />
-        </v-btn>
+        <v-btn icon="mdi-arrow-left" variant="text" aria-label="Back" @click="router.back()" />
       </template>
       <v-app-bar-title>{{ isNew ? 'New item' : 'Edit item' }}</v-app-bar-title>
       <template #append>
