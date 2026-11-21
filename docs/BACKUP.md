@@ -20,14 +20,16 @@ through OAuth. This needs an OAuth client in the same Cloud project as the sheet
 
 1. Cloud Console, project `homeassetmanagement`: **APIs & Services → Library**, enable
    **Google Drive API**.
-2. **APIs & Services → OAuth consent screen**: External, app name "Home Assets", your email as
-   support and developer contact. Add the scope `.../auth/drive.file`. Add
-   `luozhengiw@gmail.com` as a test user. Then set **Publishing status → In production**.
-   The `drive.file` scope is non-sensitive, so no verification is needed; Google shows an
-   "unverified app" screen once during login, click Advanced → continue.
-   Leaving the app in *Testing* status makes the login expire every 7 days.
-3. **Credentials → Create credentials → OAuth client ID → Desktop app**. Download the JSON and
-   save it as `secrets/oauth-client.json`.
+2. **Google Auth Platform** (the renamed OAuth consent screen):
+   - **Branding**: app name "Home Assets", your email as support and developer contact.
+   - **Data access**: add the scope `https://www.googleapis.com/auth/drive.file`.
+   - **Audience**: External, add `luozhengiw@gmail.com` as a test user, then set the
+     publishing status to **In production**. The `drive.file` scope is non-sensitive, so no
+     verification is needed; Google shows an "unverified app" screen once during login,
+     click Advanced → continue. Leaving the app in *Testing* status makes the login expire
+     every 7 days.
+3. **Clients → Create client**, application type **Desktop app**, any name. Download the JSON
+   from the client's row and save it as `secrets/oauth-client.json`.
 4. On the server machine:
 
    ```sh

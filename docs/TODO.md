@@ -2,14 +2,15 @@
 
 ## Google Drive backup: one-time setup (blocked on you)
 
-Cloud Console, project `homeassetmanagement`:
+Cloud Console, project `homeassetmanagement` (the OAuth pages are under **Google Auth Platform**):
 
 - [ ] APIs & Services → Library → enable **Google Drive API**
-- [ ] OAuth consent screen: External, app name "Home Assets", scope `.../auth/drive.file`,
-      test user `luozhengiw@gmail.com`, then **Publishing status → In production**
-      (Testing status expires the login every 7 days)
-- [ ] Credentials → Create credentials → OAuth client ID → **Desktop app** → download JSON
-      → save as `secrets/oauth-client.json`
+- [ ] Google Auth Platform → **Branding**: app name "Home Assets", your email as support/contact
+- [ ] Google Auth Platform → **Data access**: add scope `https://www.googleapis.com/auth/drive.file`
+- [ ] Google Auth Platform → **Audience**: External; add test user `luozhengiw@gmail.com`;
+      set publishing status **In production** (Testing status expires the login every 7 days)
+- [ ] Google Auth Platform → **Clients → Create client**: type **Desktop app** → Create →
+      download the JSON → save as `secrets/oauth-client.json`
 - [ ] In the repo: `npm run drive-auth`, open the printed URL, sign in as luozhengiw@gmail.com, allow
 - [ ] Restart the server, then **Back up now** in Settings (or `npm run backup`)
 - [ ] Check the "HomeAssets Backup" folder appears in Drive with `home-assets.sqlite` and `photos/`
