@@ -85,9 +85,13 @@ export function rowToFields(snap: SheetSnapshot, row: string[]): Record<keyof Sh
   return out;
 }
 
-export function fieldsToRow(snap: SheetSnapshot, fields: SheetFields): (string | number)[] {
+/**
+ * Build a full sheet row from fields. Columns the app does not know about (added by hand
+ * in the sheet) keep whatever `existing` holds, so a push never wipes them.
+ */
+export function fieldsToRow(snap: SheetSnapshot, fields: SheetFields, existing: string[] = []): (string | number)[] {
   const width = snap.headers.length;
-  const row: (string | number)[] = new Array(width).fill('');
+  const row: (string | number)[] = Array.from({ length: width }, (_, i) => existing[i] ?? '');
   for (const [field, i] of snap.colOf) {
     const v = fields[field];
     row[i] = v == null ? '' : v;

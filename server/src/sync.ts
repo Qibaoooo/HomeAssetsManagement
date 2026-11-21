@@ -90,7 +90,7 @@ async function doSync(reason: string): Promise<SyncResult> {
           sheet.updated_at = now();
           sheet.updated_by = sheet.updated_by || 'sheet';
           takeFromSheet(sheet);
-          updates.push({ rowNumber, values: fieldsToRow(snap, sheet) });
+          updates.push({ rowNumber, values: fieldsToRow(snap, sheet, row) });
           result.backfilled++;
           seen.add(sheet.id);
           return;
@@ -107,7 +107,7 @@ async function doSync(reason: string): Promise<SyncResult> {
           result.pulled++;
           if (!sheet.updated_at) {
             sheet.updated_at = now();
-            updates.push({ rowNumber, values: fieldsToRow(snap, sheet) });
+            updates.push({ rowNumber, values: fieldsToRow(snap, sheet, row) });
           }
           return;
         }
@@ -122,7 +122,7 @@ async function doSync(reason: string): Promise<SyncResult> {
             result.conflicts++;
             log('warn', `conflict on ${describe(mine)}: app edit overwrote a hand edit in the sheet (row ${rowNumber})`);
           }
-          updates.push({ rowNumber, values: fieldsToRow(snap, mineFields) });
+          updates.push({ rowNumber, values: fieldsToRow(snap, mineFields, row) });
           written.push({ id: mine.id, key: contentKey(mineFields) });
           result.pushed++;
           return;
@@ -136,7 +136,7 @@ async function doSync(reason: string): Promise<SyncResult> {
             sheet.updated_at = now();
             sheet.updated_by = 'sheet';
             takeFromSheet(sheet);
-            updates.push({ rowNumber, values: fieldsToRow(snap, sheet) });
+            updates.push({ rowNumber, values: fieldsToRow(snap, sheet, row) });
           }
           result.pulled++;
           log('info', `pulled hand edit for ${describe(sheet)} (row ${rowNumber})`);
@@ -146,7 +146,7 @@ async function doSync(reason: string): Promise<SyncResult> {
         // Same content; keep timestamps and the synced marker aligned without counting it as a change.
         if (sheet.updated_at !== mine.updated_at || sheet.updated_by !== mine.updated_by || mine.synced_key !== sheetKey) {
           if (sheet.updated_at) takeFromSheet(sheet);
-          else updates.push({ rowNumber, values: fieldsToRow(snap, mineFields) });
+          else updates.push({ rowNumber, values: fieldsToRow(snap, mineFields, row) });
         }
       });
 
