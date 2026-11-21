@@ -2,7 +2,9 @@ import vue from '@vitejs/plugin-vue';
 import vuetify from 'vite-plugin-vuetify';
 import { defineConfig } from 'vite';
 
-const API = 'http://localhost:8787';
+// Dev proxies API calls to the local TEST instance (npm run dev starts it with .env.test).
+// Production lives on the phone, never on this machine. Override: API_URL=http://... npm run dev
+const API = process.env.API_URL ?? 'http://localhost:8788';
 
 // https://vite.dev/config/
 export default defineConfig({

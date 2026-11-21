@@ -30,7 +30,17 @@ builds, and restarts the server only if `server/dist` changed (client-only chang
 live, as on the laptop). It ends with `status`, which prints the item count from the running
 server. `--restart` forces a restart, `--no-push` skips the push.
 
-Deploying takes about a minute. The restart itself is 15 to 20 seconds of downtime.
+Deploying takes about 30 seconds (longer when the lockfile changed). A restart is 15 to 20
+seconds of downtime.
+
+Realistic test data: `npm run test:seed` snapshots the phone's live database (SQLite backup
+API, safe while it runs) and photos into `data-test/`. `npm run dev` on the laptop runs the
+server from source with `.env.test` and Vite on 5173; nothing it does reaches the sheet, Drive,
+or the phone.
+
+Rollback: `git revert <bad commit>` on the laptop, then `scripts/deploy-phone.sh`. To pin the
+phone to an older commit in an emergency, inside Ubuntu: `git checkout <sha> && npm run build`,
+then `~/home-assets-ctl.sh restart` on the Termux side (and `git checkout main` later).
 
 ## Checking on it
 

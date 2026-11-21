@@ -4,6 +4,7 @@ dist/
 .env
 .env.*
 !.env.example
+!.env.test
 # runtime data (SQLite DB + photos) lives outside git
 data/
 data-test/

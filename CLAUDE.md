@@ -1,27 +1,28 @@
 # Working rules for this repo
 
-## Port 8787 is production. Do not restart it casually.
+## Production is the phone. This laptop never runs prod.
 
-The household uses `http://192.168.1.101:8787` from their phones all day. Every restart is
-visible downtime, and a bad build means a broken app for everyone.
+The household uses `http://192.168.1.102:8787`, served by the OnePlus 9 (Termux + proot
+Ubuntu, see `docs/RUNBOOK-phone.md`). Every restart there is visible downtime, and a bad build
+means a broken app for everyone. Nothing on this machine may sync the sheet or back up to Drive:
+the laptop's `data/` is a stale snapshot and the `HomeAssets` scheduled task stays disabled.
 
 Workflow for any server or client change:
 
-1. Build: `npm run build`.
-2. Test on the **test instance**, never on 8787:
-   `npm run start:test` → http://localhost:8788
-   It uses `.env.test`: its own `data-test/` folder, Google Sheet sync **off**, Drive backup
-   **off**. Nothing it does can reach the sheet, Drive, or prod data.
-   `npm run test:seed` copies the prod database and photos into `data-test/` for realistic data.
-3. Only when the test instance works (type-check clean, API calls verified, UI checked at phone
-   width), restart prod: stop the process on 8787 and start it again with `npm start`.
-   Client-only changes need **no restart**: the built `client/dist` is served live.
-4. Verify prod answers right after the restart (`curl localhost:8787/api/items`).
+1. Develop: `npm run dev` runs the server from source with `.env.test` (port 8788, `data-test/`,
+   sheet sync off, backup off) and Vite on 5173 proxying to it. `npm run test:seed` pulls a
+   consistent snapshot of the phone's live data into `data-test/` for realistic testing.
+2. Build and test the built app: `npm run build`, then `npm run start:test` (http://localhost:8788,
+   same `.env.test`). Type-check clean, API calls verified, UI checked at phone width.
+3. Deploy: commit, then `scripts/deploy-phone.sh`. It pushes, pulls the commit on the phone,
+   builds there, and restarts only if `server/dist` changed. Client-only changes deploy with
+   no restart (the built `client/dist` is served live). About 30 s plus 15 s downtime on restart.
+4. The script ends with the phone's `status` (item count from the live server). Also open the
+   app on a phone after a server change.
+5. Rollback: `git revert <sha>`, then `scripts/deploy-phone.sh` again.
 
-Never run two instances against the same `data/` folder or with sheet sync on at the same time.
-
-When prod lives on the phone (see `docs/RUNBOOK-phone.md`): same workflow on the laptop, then
-commit and run `scripts/deploy-phone.sh`. Never edit code on the phone.
+Never run two instances against the same data folder or with sheet sync on at the same time.
+Never edit code on the phone.
 
 ## Automated tests: required for backend or database changes
 

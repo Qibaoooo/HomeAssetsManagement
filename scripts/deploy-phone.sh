@@ -23,7 +23,8 @@ HEAD=$(git rev-parse --short HEAD)
 
 echo "== installing control scripts"
 scp -q -P 8022 scripts/phone/home-assets-ctl.sh "$PHONE:home-assets-ctl.sh"
-$SSH 'chmod +x ~/home-assets-ctl.sh; mkdir -p ~/.termux/boot'
+scp -q -P 8022 scripts/phone/snapshot.sh "$PHONE:home-assets-snapshot.sh"
+$SSH 'chmod +x ~/home-assets-ctl.sh ~/home-assets-snapshot.sh; mkdir -p ~/.termux/boot'
 scp -q -P 8022 scripts/phone/boot.sh "$PHONE:.termux/boot/home-assets.sh"
 $SSH 'chmod +x ~/.termux/boot/home-assets.sh'
 
