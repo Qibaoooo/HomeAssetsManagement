@@ -77,8 +77,8 @@ handling of the secret files are in [docs/BACKUP.md](docs/BACKUP.md).
 ## Run on the phone (production)
 
 Production runs on the OnePlus 9 (Termux + proot Ubuntu), see [docs/RUNBOOK-phone.md](docs/RUNBOOK-phone.md).
-Develop on the laptop with `npm run dev` (test instance + Vite), seed realistic data with
-`npm run test:seed`, then commit and `scripts/deploy-phone.sh`.
+Develop on the laptop and deploy with `scripts/deploy-phone.sh`: the full loop is in
+[docs/DEV-CYCLE.md](docs/DEV-CYCLE.md).
 
 ## How sync works
 

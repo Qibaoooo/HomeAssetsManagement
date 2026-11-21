@@ -42,5 +42,5 @@ API (`server/test/mock-sheets.ts`), in a throwaway data folder. It never touches
 - Secrets live in `secrets/` and are git-ignored. Never commit them, never print their contents.
 - The GitHub repo is public. Keep the Sprout Lands assets usage non-commercial (see README).
 - Sheet column headers are the source of field names; app labels match them exactly.
-- Scope and decisions: `docs/SCOPE.md`. User-facing quirks: `docs/USAGE.md`. Backup: `docs/BACKUP.md`.
+- Dev loop and deploy: `docs/DEV-CYCLE.md`. Scope and decisions: `docs/SCOPE.md`. User-facing quirks: `docs/USAGE.md`. Backup: `docs/BACKUP.md`.
 - Pending items for the user: `docs/TODO.md`.
