@@ -86,7 +86,7 @@ export interface BackupHistoryRow {
 }
 
 export interface BackupStatus {
-  state: 'ready' | 'no-client' | 'no-token';
+  state: 'ready' | 'off' | 'no-client' | 'no-token';
   folder: string;
   intervalHours: number;
   /** most recent run, including "nothing changed" checks */

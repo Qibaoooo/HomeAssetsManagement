@@ -14,6 +14,12 @@ const store = useItems();
 const settings = useSettings();
 
 const isNew = computed(() => !props.id);
+
+// Back arrow: history when there is some, otherwise (deep link, home-screen launch) the list.
+function goBack() {
+  if (window.history.length > 1 && window.history.state?.back) router.back();
+  else router.replace({ name: 'items' });
+}
 const loading = ref(!!props.id);
 const saving = ref(false);
 const existing = ref<Item | null>(null);
@@ -109,6 +115,7 @@ async function save() {
       item = (await api.deletePhoto(item.id)).item;
     }
     store.put(item);
+    void store.load(true); // refresh categories/locations/tags so new values appear as chips right away
     notify(res.synced ? 'Saved and written to the sheet' : 'Saved locally. Sheet sync pending.', res.synced ? 'success' : 'warning');
     router.replace({ name: 'items' });
   } catch (e) {
@@ -158,7 +165,7 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
   <div class="page">
     <v-app-bar flat density="comfortable" class="px-appbar">
       <template #prepend>
-        <v-btn icon="mdi-arrow-left" variant="text" aria-label="Back" @click="router.back()" />
+        <v-btn icon="mdi-arrow-left" variant="text" aria-label="Back" @click="goBack" />
       </template>
       <v-app-bar-title>{{ isNew ? 'New item' : 'Edit item' }}</v-app-bar-title>
       <template #append>

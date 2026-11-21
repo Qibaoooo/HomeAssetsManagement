@@ -4,7 +4,7 @@ import { config } from '../config.js';
 
 export async function backupRoutes(app: FastifyInstance) {
   app.get('/api/backup/status', async () => ({
-    state: backupConfigured(), // ready | no-client | no-token
+    state: backupConfigured(), // ready | off | no-client | no-token
     folder: config.backupFolder,
     intervalHours: config.backupIntervalMs / 3_600_000,
     last: lastBackup(), // most recent run, including "nothing changed" checks

@@ -40,6 +40,33 @@ function diff(before: Item | undefined, after: Item) {
 
 const describe = (i: Item) => [i.category, i.type, i.design].filter(Boolean).join(' / ');
 
+const TEXT_MAX = 200;
+const REMARKS_MAX = 4000;
+/** Returns a human-readable problem with the input, or null when it is acceptable. */
+export function validateInput(body: unknown): string | null {
+  if (body == null || typeof body !== 'object' || Array.isArray(body)) return 'expected a JSON object';
+  const b = body as Record<string, unknown>;
+  for (const k of ['category', 'type', 'design', 'brand', 'location', 'size', 'tag', 'updated_by'] as const) {
+    if (b[k] != null && typeof b[k] !== 'string') return `${k} must be text`;
+    if (typeof b[k] === 'string' && (b[k] as string).length > TEXT_MAX) return `${k} is too long (max ${TEXT_MAX} characters)`;
+  }
+  if (b.remarks != null && (typeof b.remarks !== 'string' || b.remarks.length > REMARKS_MAX)) return `remarks must be text up to ${REMARKS_MAX} characters`;
+  if (b.quantity != null && b.quantity !== '') {
+    const n = Number(b.quantity);
+    if (!Number.isInteger(n) || n < 0) return 'quantity must be a whole number, 0 or more';
+  }
+  if (b.price != null && b.price !== '') {
+    const n = Number(b.price);
+    if (!Number.isFinite(n) || n < 0) return 'price must be a number, 0 or more';
+  }
+  if (b.purchase_date != null && b.purchase_date !== '') {
+    const s = String(b.purchase_date);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || Number.isNaN(Date.parse(s))) return 'purchase_date must be YYYY-MM-DD';
+  }
+  if (b.status != null && b.status !== 'active' && b.status !== 'retired') return 'status must be active or retired';
+  return null;
+}
+
 // Photo URLs carry the upload version so a replaced photo is never served from the browser cache.
 const photoUrls = (item: Item) => {
   if (!item.photo) return { photo_url: null, thumb_url: null };
@@ -72,6 +99,8 @@ export async function itemRoutes(app: FastifyInstance) {
   });
 
   app.post<{ Body: ItemInput }>('/api/items', async (req, reply) => {
+    const problem = validateInput(req.body ?? {});
+    if (problem) return reply.code(400).send({ error: problem });
     const item = buildItem(req.body ?? {});
     if (!item.category && !item.type && !item.design) {
       req.log.info({ body: req.body }, 'item create rejected: no category, type or design');
@@ -89,6 +118,8 @@ export async function itemRoutes(app: FastifyInstance) {
       req.log.info({ itemId: req.params.id }, 'item update: not found');
       return reply.code(404).send({ error: 'not found' });
     }
+    const problem = validateInput(req.body ?? {});
+    if (problem) return reply.code(400).send({ error: problem });
     const next = buildItem(req.body ?? {}, base);
     updateItem(next);
     req.log.info({ itemId: base.id, by: next.updated_by, changed: diff(base, next) }, `item updated: ${describe(next)}`);
@@ -101,7 +132,8 @@ export async function itemRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const base = getItem(req.params.id);
       if (!base) return reply.code(404).send({ error: 'not found' });
-      const status = req.body?.status === 'retired' ? 'retired' : 'active';
+      const status = req.body?.status;
+      if (status !== 'active' && status !== 'retired') return reply.code(400).send({ error: 'status must be active or retired' });
       const next = buildItem({ status, updated_by: req.body?.updated_by }, base);
       updateItem(next);
       req.log.info({ itemId: base.id, by: next.updated_by, from: base.status, to: status }, `item status: ${describe(base)}`);

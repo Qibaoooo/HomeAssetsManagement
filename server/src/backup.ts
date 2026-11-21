@@ -20,7 +20,10 @@ export interface BackupResult {
 export const SQLITE_NAME = 'home-assets.sqlite';
 export const PHOTOS_FOLDER = 'photos';
 
-export function backupConfigured(): 'ready' | 'no-client' | 'no-token' {
+export function backupConfigured(): 'ready' | 'off' | 'no-client' | 'no-token' {
+  // BACKUP_INTERVAL_HOURS=0 disables backups entirely, including manual ones. The test instance
+  // relies on this: it shares secrets/ with prod and must never overwrite the prod backup in Drive.
+  if (config.backupIntervalMs <= 0) return 'off';
   if (!hasOAuthClient()) return 'no-client';
   if (!hasDriveToken()) return 'no-token';
   return 'ready';
@@ -112,6 +115,12 @@ export const history = (limit = 20) => backupHistory(limit);
 
 let queue: Promise<unknown> = Promise.resolve();
 export function backupNow(reason = 'manual'): Promise<BackupResult> {
+  if (backupConfigured() !== 'ready') {
+    return Promise.resolve({
+      at: now(), ok: false, error: `backup not available (${backupConfigured()})`, unchanged: false,
+      sqliteBytes: 0, photosUploaded: 0, photosTotal: 0, durationMs: 0,
+    });
+  }
   const run = queue.then(() => doBackup(reason));
   queue = run.catch(() => undefined);
   return run;
@@ -128,7 +137,7 @@ let timer: NodeJS.Timeout | undefined;
  * every 10 minutes whether the interval has elapsed. Unchanged data is detected locally and skipped.
  */
 export function startBackupScheduler() {
-  if (timer || backupConfigured() !== 'ready' || config.backupIntervalMs <= 0) return;
+  if (timer || backupConfigured() !== 'ready') return;
   const due = () => {
     const last = lastBackup();
     return !last?.ok || Date.now() - Date.parse(last.at) > config.backupIntervalMs;
@@ -141,7 +150,7 @@ export function startBackupScheduler() {
 let soon: NodeJS.Timeout | undefined;
 /** Called after every app write: back up a few minutes after the last change, so a shutdown loses little. */
 export function backupSoon(delayMs = 5 * 60_000) {
-  if (backupConfigured() !== 'ready' || config.backupIntervalMs <= 0) return;
+  if (backupConfigured() !== 'ready') return;
   if (soon) clearTimeout(soon);
   soon = setTimeout(() => void backupNow('after-edit'), delayMs);
   soon.unref();

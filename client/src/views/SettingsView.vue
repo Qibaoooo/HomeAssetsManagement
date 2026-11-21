@@ -161,7 +161,8 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
             <div class="d-flex align-center ga-3">
               <PxIcon name="emoji:bunny-question" :size="48" />
               <div class="text-body-2">
-                <template v-if="backup.state === 'no-client'">Not set up. Add <code>secrets/oauth-client.json</code> on the server, then run <code>npm run drive-auth</code>.</template>
+                <template v-if="backup.state === 'off'">Backups are switched off on this server instance.</template>
+                <template v-else-if="backup.state === 'no-client'">Not set up. Add <code>secrets/oauth-client.json</code> on the server, then run <code>npm run drive-auth</code>.</template>
                 <template v-else>Not authorised yet. Run <code>npm run drive-auth</code> on the server and sign in once.</template>
                 See docs/BACKUP.md.
               </div>
