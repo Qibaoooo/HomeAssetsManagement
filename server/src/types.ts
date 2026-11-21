@@ -21,6 +21,7 @@ export interface SheetFields {
 
 export interface Item extends SheetFields {
   photo: string | null; // filename under data/photos, never synced to the sheet
+  photo_version: string | null; // changes on each upload; cache-buster for photo URLs
   dirty: number; // 1 = local change not yet written to the sheet
   created_at: string;
   /** content key of the row as last seen in / written to the sheet; used to detect hand edits vs app edits */

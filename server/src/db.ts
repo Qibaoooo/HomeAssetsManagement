@@ -46,11 +46,15 @@ db.exec(`
 // Lightweight migrations for columns added after the first release.
 const cols = new Set((db.pragma('table_info(items)') as { name: string }[]).map((c) => c.name));
 if (!cols.has('synced_key')) db.exec(`ALTER TABLE items ADD COLUMN synced_key TEXT`);
+// Changes on every photo upload; appended to photo URLs so browsers never show a stale cached image.
+if (!cols.has('photo_version')) db.exec(`ALTER TABLE items ADD COLUMN photo_version TEXT`);
+// Photos uploaded before versioning existed get one now, so their URLs change once and bypass old caches.
+db.prepare(`UPDATE items SET photo_version = ? WHERE photo IS NOT NULL AND photo_version IS NULL`).run(Date.now().toString(36));
 
 export const now = () => new Date().toISOString();
 
 const ITEM_COLS =
-  'id, category, type, design, brand, location, size, quantity, remarks, tag, status, purchase_date, price, updated_at, updated_by, photo, dirty, created_at, synced_key';
+  'id, category, type, design, brand, location, size, quantity, remarks, tag, status, purchase_date, price, updated_at, updated_by, photo, dirty, created_at, synced_key, photo_version';
 
 const stmts = {
   all: db.prepare(`SELECT ${ITEM_COLS} FROM items ORDER BY category, type, design`),
@@ -58,12 +62,12 @@ const stmts = {
   byId: db.prepare(`SELECT ${ITEM_COLS} FROM items WHERE id = ?`),
   dirty: db.prepare(`SELECT ${ITEM_COLS} FROM items WHERE dirty = 1`),
   insert: db.prepare(
-    `INSERT INTO items (${ITEM_COLS}) VALUES (@id, @category, @type, @design, @brand, @location, @size, @quantity, @remarks, @tag, @status, @purchase_date, @price, @updated_at, @updated_by, @photo, @dirty, @created_at, @synced_key)`,
+    `INSERT INTO items (${ITEM_COLS}) VALUES (@id, @category, @type, @design, @brand, @location, @size, @quantity, @remarks, @tag, @status, @purchase_date, @price, @updated_at, @updated_by, @photo, @dirty, @created_at, @synced_key, @photo_version)`,
   ),
   update: db.prepare(
     `UPDATE items SET category=@category, type=@type, design=@design, brand=@brand, location=@location, size=@size, quantity=@quantity, remarks=@remarks, tag=@tag, status=@status, purchase_date=@purchase_date, price=@price, updated_at=@updated_at, updated_by=@updated_by, dirty=@dirty, synced_key=@synced_key WHERE id=@id`,
   ),
-  setPhoto: db.prepare(`UPDATE items SET photo=? WHERE id=?`),
+  setPhoto: db.prepare(`UPDATE items SET photo=?, photo_version=? WHERE id=?`),
   markSynced: db.prepare(`UPDATE items SET dirty=0, synced_key=? WHERE id=?`),
   log: db.prepare(`INSERT INTO sync_log (at, level, message) VALUES (?, ?, ?)`),
   logTail: db.prepare(`SELECT at, level, message FROM sync_log ORDER BY id DESC LIMIT ?`),
@@ -113,6 +117,7 @@ export function buildItem(input: ItemInput, base?: Item, opts: { dirty: number }
     dirty: opts.dirty,
     created_at: base?.created_at ?? ts,
     synced_key: base?.synced_key ?? null,
+    photo_version: base?.photo_version ?? null,
   };
 }
 
@@ -123,13 +128,16 @@ export function updateItem(item: Item) {
   stmts.update.run(item);
 }
 /** Insert or update from sync; never touches photo. The row is clean afterwards. */
-export function upsertFromSheet(item: Omit<Item, 'photo' | 'created_at' | 'dirty'>) {
+export function upsertFromSheet(item: Omit<Item, 'photo' | 'photo_version' | 'created_at' | 'dirty'>) {
   const existing = getItem(item.id);
   if (existing) updateItem({ ...existing, ...item, dirty: 0, photo: existing.photo, created_at: existing.created_at });
-  else insertItem({ ...item, dirty: 0, photo: null, created_at: now() });
+  else insertItem({ ...item, dirty: 0, photo: null, photo_version: null, created_at: now() });
 }
-export function setPhoto(id: string, photo: string | null) {
-  stmts.setPhoto.run(photo, id);
+/** Set or clear the cover photo. A fresh version string makes the photo URL change. */
+export function setPhoto(id: string, photo: string | null): string | null {
+  const version = photo ? Date.now().toString(36) : null;
+  stmts.setPhoto.run(photo, version, id);
+  return version;
 }
 /** Local row has been written to the sheet; remember what the sheet now holds. */
 export function markSynced(id: string, syncedKey: string) {

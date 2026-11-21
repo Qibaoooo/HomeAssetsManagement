@@ -16,12 +16,16 @@ const app = Fastify({ logger: { level: 'info' } });
 await app.register(fastifyMultipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
 
 // Item photos (resized webp) from the data directory.
+// `no-cache` = browsers may keep a copy but must revalidate (ETag) before showing it, so a replaced
+// photo can never be shown stale. On the LAN a revalidation is a tiny 304. URLs also carry ?v=<upload>.
 await app.register(fastifyStatic, {
   root: photosDir,
   prefix: '/photos/',
   decorateReply: false,
-  maxAge: '7d',
-  immutable: false,
+  cacheControl: false,
+  setHeaders: (res) => {
+    res.setHeader('cache-control', 'no-cache');
+  },
 });
 
 await app.register(itemRoutes);
