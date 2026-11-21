@@ -21,6 +21,10 @@ export const config = {
   dataDir: path.resolve(REPO_ROOT, env('DATA_DIR', 'data')),
   clientDist: path.resolve(REPO_ROOT, 'client', 'dist'),
   syncIntervalMs: Number(env('SYNC_INTERVAL_MIN', '1')) * 60_000,
+  // SHEET_SYNC=off makes the instance never read or write the Google Sheet (test instances).
+  sheetSync: env('SHEET_SYNC', 'on').toLowerCase() !== 'off',
+  // Point the Sheets client at a mock server (tests): e.g. http://127.0.0.1:8790/
+  sheetsApiUrl: env('SHEETS_API_URL', ''),
   // Google Drive backup (as the user, via OAuth). See docs/BACKUP.md.
   oauthClientFile: path.resolve(REPO_ROOT, env('GOOGLE_OAUTH_CLIENT', 'secrets/oauth-client.json')),
   driveTokenFile: path.resolve(REPO_ROOT, env('GOOGLE_DRIVE_TOKEN', 'secrets/drive-token.json')),

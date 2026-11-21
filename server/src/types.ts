@@ -67,3 +67,14 @@ export const SHEET_COLUMNS: { header: string; field: keyof SheetFields }[] = [
 ];
 
 export const SYNCED_FIELDS = SHEET_COLUMNS.map((c) => c.field);
+
+/** Tags are stored as one comma-separated string in the sheet, e.g. "A, mom". */
+export const splitTags = (s: string | null | undefined): string[] => {
+  const out: string[] = [];
+  for (const raw of (s ?? '').split(',')) {
+    const t = raw.trim();
+    if (t && !out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
+  }
+  return out;
+};
+export const normalizeTags = (s: string | null | undefined): string => splitTags(s).join(', ');

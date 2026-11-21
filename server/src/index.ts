@@ -55,4 +55,5 @@ const lanAddrs = Object.values(os.networkInterfaces())
   .filter((n): n is os.NetworkInterfaceInfo => !!n && n.family === 'IPv4' && !n.internal)
   .map((n) => `http://${n.address}:${config.port}`);
 app.log.info(`client ${hasClient ? 'served from client/dist' : 'NOT built; run "npm run build" or use the Vite dev server'}`);
+if (!config.sheetSync) app.log.warn(`TEST INSTANCE: sheet sync off, data in ${config.dataDir}`);
 app.log.info(`reachable on LAN at: ${lanAddrs.join(', ') || '(no LAN address found)'}`);

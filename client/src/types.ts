@@ -74,11 +74,25 @@ export interface BackupResult {
   durationMs: number;
 }
 
+export interface BackupHistoryRow {
+  at: string;
+  ok: boolean;
+  reason: string;
+  sqlite_bytes: number;
+  photos_uploaded: number;
+  photos_total: number;
+  duration_ms: number;
+  error: string | null;
+}
+
 export interface BackupStatus {
   state: 'ready' | 'no-client' | 'no-token';
   folder: string;
   intervalHours: number;
+  /** most recent run, including "nothing changed" checks */
   last: BackupResult | null;
+  /** runs that uploaded something or failed, newest first */
+  history: BackupHistoryRow[];
 }
 
 export interface SyncStatus {

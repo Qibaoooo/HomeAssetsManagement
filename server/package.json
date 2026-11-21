@@ -11,7 +11,9 @@
     "sync": "tsx src/cli-sync.ts",
     "drive-auth": "tsx src/cli-drive-auth.ts",
     "backup": "tsx src/cli-backup.ts",
-    "restore": "tsx src/cli-restore.ts"
+    "restore": "tsx src/cli-restore.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "mock:sheets": "tsx test/mock-sheets-cli.ts"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.3",

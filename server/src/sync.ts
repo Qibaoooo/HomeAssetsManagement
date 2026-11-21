@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 import { dirtyItems, listItems, log, markSynced, metaGet, metaSet, now, transaction, updateItem, upsertFromSheet } from './db.js';
 import { appendRows, fieldsToRow, readSheet, rowToFields, writeRows, type SheetSnapshot } from './sheets.js';
-import type { Item, ItemStatus, SheetFields } from './types.js';
+import { normalizeTags, type Item, type ItemStatus, type SheetFields } from './types.js';
 
 export interface SyncResult {
   at: string;
@@ -34,7 +34,7 @@ function parseRow(f: Record<keyof SheetFields, string>): SheetFields {
     size: f.size,
     quantity: numOrNull(f.quantity),
     remarks: f.remarks,
-    tag: f.tag,
+    tag: normalizeTags(f.tag),
     id: f.id,
     updated_at: f.updated_at,
     updated_by: f.updated_by,
@@ -193,6 +193,13 @@ const summary = (r: SyncResult) =>
 // Runs are serialised; every caller gets its own full run after any in-flight one.
 let queue: Promise<unknown> = Promise.resolve();
 export function syncNow(reason = 'manual'): Promise<SyncResult> {
+  if (!config.sheetSync) {
+    // Test instance: behave like an offline sheet. Writes stay local and dirty.
+    return Promise.resolve({
+      at: now(), ok: false, error: 'sheet sync is off (SHEET_SYNC=off)', pulled: 0, pushed: 0, appended: 0,
+      backfilled: 0, retired: 0, conflicts: 0, durationMs: 0,
+    });
+  }
   const run = queue.then(() => doSync(reason));
   queue = run.catch(() => undefined);
   return run;
@@ -206,7 +213,7 @@ export const pendingCount = () => dirtyItems().length;
 
 let timer: NodeJS.Timeout | undefined;
 export function startScheduler() {
-  if (timer) return;
+  if (timer || !config.sheetSync) return;
   void syncNow('startup');
   timer = setInterval(() => void syncNow('scheduled'), config.syncIntervalMs);
   timer.unref();

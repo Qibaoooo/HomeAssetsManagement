@@ -42,7 +42,7 @@ function fill(item: Item) {
   form.size = item.size;
   form.quantity = item.quantity;
   form.remarks = item.remarks;
-  form.tag = item.tag;
+  tags.value = splitTags(item.tag);
   form.purchase_date = item.purchase_date;
   form.price = item.price;
 }
@@ -100,7 +100,7 @@ async function save() {
   if (!valid.value || saving.value) return;
   saving.value = true;
   try {
-    const input: ItemInput = { ...form, updated_by: settings.displayName || 'unknown' };
+    const input: ItemInput = { ...form, tag: splitTags(tags.value.join(',')).join(', '), updated_by: settings.displayName || 'unknown' };
     const res = isNew.value ? await api.create(input) : await api.update(props.id!, input);
     let item = res.item;
     if (pendingFile.value) {
@@ -144,6 +144,11 @@ const typeSuggestions = computed(() => {
   );
   return [...inCat].sort((a, b) => a.localeCompare(b));
 });
+
+// Tags: edited as chips, stored in the sheet as one comma-separated string.
+const tags = ref<string[]>([]);
+const splitTags = (s: string) =>
+  s.split(',').map((t) => t.trim()).filter((t, i, a) => t && a.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
 
 // Shared field props: labels always float (like sheet headers), no reserved message row.
 const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true, class: 'mb-3' } as const;
@@ -208,7 +213,17 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
         </template>
       </v-text-field>
 
-      <v-combobox v-model="form.tag" label="Tag" :items="store.meta.tags" v-bind="field" />
+      <v-combobox
+        v-model="tags"
+        label="Tag"
+        :items="store.meta.tags"
+        multiple
+        chips
+        closable-chips
+        :delimiters="[',']"
+        hint="Type a tag and press Enter or comma. Several allowed."
+        v-bind="{ ...field, hideDetails: 'auto' }"
+      />
 
       <v-row dense>
         <v-col cols="7">

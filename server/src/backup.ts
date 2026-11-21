@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config, dbFile, photosDir } from './config.js';
-import { db, log, metaGet, metaSet, now } from './db.js';
+import { addBackupHistory, backupHistory, db, itemsFingerprint, log, metaGet, metaSet, now } from './db.js';
 import { ensureFolder, getDrive, hasDriveToken, hasOAuthClient, listFiles, putFile } from './drive.js';
 
 export interface BackupResult {
@@ -34,11 +34,13 @@ export async function backupFolders() {
   return { drive, root, photos };
 }
 
-const sha256 = (p: string) => createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-
-/** Fingerprint of everything we back up, so unchanged data costs no upload. */
-function localFingerprint(snapshot: string): { dbHash: string; photos: Map<string, number>; key: string } {
-  const dbHash = sha256(snapshot);
+/**
+ * Fingerprint of everything we back up, so unchanged data costs no upload.
+ * The database part hashes the item rows, not the file: bookkeeping tables (sync log, this
+ * backup's own result) change on every run and must not count as a change.
+ */
+function localFingerprint(): { dbHash: string; photos: Map<string, number>; key: string } {
+  const dbHash = itemsFingerprint();
   const photos = new Map<string, number>();
   if (fs.existsSync(photosDir)) {
     for (const f of fs.readdirSync(photosDir).filter((n) => n.endsWith('.webp')).sort()) {
@@ -56,10 +58,7 @@ async function doBackup(reason: string): Promise<BackupResult> {
   };
   const snapshot = path.join(config.dataDir, `${SQLITE_NAME}.backup-tmp`);
   try {
-    // 1. Consistent SQLite snapshot via the online backup API.
-    await db.backup(snapshot);
-    result.sqliteBytes = fs.statSync(snapshot).size;
-    const fp = localFingerprint(snapshot);
+    const fp = localFingerprint();
     result.photosTotal = fp.photos.size;
 
     if (fp.key === metaGet('backup_fingerprint') && lastBackup()?.ok) {
@@ -68,8 +67,10 @@ async function doBackup(reason: string): Promise<BackupResult> {
     } else {
       const { drive, root, photos } = await backupFolders();
 
-      // 2. Upload the snapshot; an existing file gets a new revision (Drive keeps recent revisions).
+      // 1. Consistent SQLite snapshot via the online backup API; an existing Drive file gets a new revision.
       if (fp.dbHash !== metaGet('backup_db_hash')) {
+        await db.backup(snapshot);
+        result.sqliteBytes = fs.statSync(snapshot).size;
         const existingDb = (await listFiles(drive, root)).get(SQLITE_NAME);
         await putFile(drive, root, SQLITE_NAME, snapshot, 'application/vnd.sqlite3', existingDb?.id);
         metaSet('backup_db_hash', fp.dbHash);
@@ -94,11 +95,20 @@ async function doBackup(reason: string): Promise<BackupResult> {
   }
   result.durationMs = Date.now() - started;
   metaSet('last_backup', JSON.stringify(result));
+  // History keeps runs that uploaded something or failed; hourly "nothing changed" checks only update last_backup.
+  if (!result.unchanged) {
+    addBackupHistory({
+      at: result.at, ok: result.ok, reason, sqlite_bytes: result.sqliteBytes, photos_uploaded: result.photosUploaded,
+      photos_total: result.photosTotal, duration_ms: result.durationMs, error: result.error ?? null,
+    });
+  }
   if (result.ok && !result.unchanged) {
     log('info', `backup (${reason}) ok in ${result.durationMs}ms: sqlite ${Math.round(result.sqliteBytes / 1024)} KB, photos +${result.photosUploaded}/${result.photosTotal}`);
   }
   return result;
 }
+
+export const history = (limit = 20) => backupHistory(limit);
 
 let queue: Promise<unknown> = Promise.resolve();
 export function backupNow(reason = 'manual'): Promise<BackupResult> {

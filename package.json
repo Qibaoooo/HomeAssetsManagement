@@ -15,7 +15,11 @@
     "sync": "npm run sync -w server",
     "drive-auth": "npm run drive-auth -w server",
     "backup": "npm run backup -w server",
-    "restore": "npm run restore -w server"
+    "restore": "npm run restore -w server",
+    "start:test": "node --env-file=.env.test server/dist/index.js",
+    "test:seed": "node scripts/seed-test.mjs",
+    "test": "npm test -w server",
+    "mock:sheets": "npm run mock:sheets -w server"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"

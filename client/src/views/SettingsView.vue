@@ -41,6 +41,11 @@ async function backupNow() {
 }
 
 const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const describeRun = (r: { sqlite_bytes: number; photos_uploaded: number; photos_total: number }) =>
+  [r.sqlite_bytes ? `database ${kb(r.sqlite_bytes)}` : '', r.photos_uploaded ? `${r.photos_uploaded} photo${r.photos_uploaded === 1 ? '' : 's'}` : '']
+    .filter(Boolean)
+    .join(', ') || 'nothing uploaded';
+const reasonLabel: Record<string, string> = { manual: 'manual', cli: 'manual', scheduled: 'hourly', startup: 'on start', 'after-edit': 'after edit' };
 
 async function syncNow() {
   syncing.value = true;
@@ -131,16 +136,21 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
               <PxSprite v-else-if="!backup.last" name="bunny-sleep" :size="56" :fps="2" />
               <PxIcon v-else :name="backup.last.ok ? 'emoji:bunny-check' : 'emoji:bunny-cross'" :size="48" />
               <div>
-                <template v-if="backup.last">
-                  <span class="px-font">{{ backup.last.ok ? 'OK' : 'Failed' }}</span>
-                  <span class="text-medium-emphasis ml-2">{{ fmt(backup.last.at) }}</span>
+                <template v-if="backup.history[0]">
+                  <span class="px-font">Last backup</span>
+                  <span class="text-medium-emphasis ml-2">{{ fmt(backup.history[0].at) }}</span>
                   <div class="text-body-2">
-                    <template v-if="!backup.last.ok">{{ backup.last.error }}</template>
-                    <template v-else-if="backup.last.unchanged">nothing changed</template>
-                    <template v-else>database {{ kb(backup.last.sqliteBytes) }}, {{ backup.last.photosUploaded }} new photo{{ backup.last.photosUploaded === 1 ? '' : 's' }} of {{ backup.last.photosTotal }}</template>
+                    <template v-if="backup.history[0].ok">{{ describeRun(backup.history[0]) }}</template>
+                    <template v-else>failed: {{ backup.history[0].error }}</template>
                   </div>
                 </template>
                 <span v-else class="text-medium-emphasis">No backup has run yet.</span>
+                <div v-if="backup.last && backup.last.unchanged" class="text-caption text-medium-emphasis">
+                  Last check {{ fmt(backup.last.at) }}, nothing changed
+                </div>
+                <div v-else-if="backup.last && !backup.last.ok" class="text-caption text-error">
+                  Last attempt {{ fmt(backup.last.at) }} failed: {{ backup.last.error }}
+                </div>
               </div>
             </div>
             <div class="text-caption text-medium-emphasis">
@@ -163,6 +173,20 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
             <v-icon start>mdi-cloud-upload-outline</v-icon>Back up now
           </v-btn>
         </v-card-actions>
+        <v-expansion-panels v-if="backup?.history.length" variant="accordion" flat>
+          <v-expansion-panel title="Backup history">
+            <v-expansion-panel-text>
+              <div v-for="(h, i) in backup.history" :key="i" class="d-flex align-start ga-2 text-caption mb-2">
+                <PxIcon :name="h.ok ? 'check' : 'cross'" :size="16" class="mt-1" />
+                <div>
+                  <span>{{ fmt(h.at) }}</span>
+                  <span class="text-medium-emphasis"> · {{ reasonLabel[h.reason] ?? h.reason }}</span>
+                  <div>{{ h.ok ? describeRun(h) : `failed: ${h.error}` }}</div>
+                </div>
+              </div>
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-card>
 
       <div class="px-font text-caption text-medium-emphasis text-center mt-6">

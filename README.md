@@ -44,6 +44,20 @@ npm run dev
 
 One-off sync from the command line: `npm run sync`.
 
+## Testing without touching production
+
+Port 8787 is the production instance the household uses. For changes:
+
+```sh
+npm run build
+npm test              # sync engine + data layer against a mock Sheets API (backend changes)
+npm run test:seed     # copy prod data into data-test/
+npm run start:test    # isolated instance on http://localhost:8788: own data, sheet sync off, backup off
+```
+
+Restart prod only after the build passes on the test instance. Client-only changes are served
+live from `client/dist` without a restart. See `CLAUDE.md` for the full rules.
+
 ## Run at logon (Windows)
 
 ```powershell

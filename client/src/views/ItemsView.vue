@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onActivated, onMounted, ref } from 'vue';
+import { computed, onActivated, onMounted, ref, watch } from 'vue';
 import PxIcon from '../components/PxIcon.vue';
 import PxSprite from '../components/PxSprite.vue';
 import { useItems } from '../stores/items';
@@ -21,6 +21,30 @@ onActivated(() => store.load());
 const norm = (s: string) => s.toLowerCase();
 const haystack = (i: Item) =>
   norm([i.category, i.type, i.design, i.brand, i.location, i.size, i.remarks, i.tag].join(' '));
+
+// Location chips belong to the chosen category: only its locations, and none without a category.
+const locationsForCategory = computed(() => {
+  if (!category.value) return [];
+  const set = new Set<string>();
+  for (const i of store.items) {
+    if (i.category !== category.value || i.status === 'retired' || !i.location) continue;
+    set.add(i.location);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b));
+});
+watch(category, () => (location.value = null));
+
+// Each category shows 3 items until expanded; the active category filter shows everything.
+const PREVIEW = 3;
+const expanded = ref(new Set<string>());
+const toggle = (name: string) => {
+  const s = new Set(expanded.value);
+  if (s.has(name)) s.delete(name);
+  else s.add(name);
+  expanded.value = s;
+};
+const isOpen = (name: string) => !!category.value || expanded.value.has(name);
+const shown = (g: { name: string; items: Item[] }) => (isOpen(g.name) ? g.items : g.items.slice(0, PREVIEW));
 
 const visible = computed(() => {
   const q = norm(search.value.trim());
@@ -45,8 +69,9 @@ const groups = computed(() => {
 });
 
 const title = (i: Item) => [i.type, i.design && i.design !== '-' ? i.design : ''].filter(Boolean).join(' · ') || i.category;
+const tagList = (i: Item) => i.tag.split(',').map((t) => t.trim()).filter((t) => t && t !== '-');
 const subtitle = (i: Item) =>
-  [i.brand, i.location, i.size, i.tag && i.tag !== '-' ? `#${i.tag}` : ''].filter(Boolean).join(' · ');
+  [i.brand, i.location, i.size, ...tagList(i).map((t) => `#${t}`)].filter(Boolean).join(' · ');
 const totalActive = computed(() => store.active.length);
 
 /** One standard placeholder for items without a photo. */
@@ -85,8 +110,8 @@ function clearFilters() {
       <v-chip-group v-model="category" class="mt-1" selected-class="px-chip--on" column>
         <v-chip v-for="c in store.meta.categories" :key="c" :value="c" filter size="small">{{ c }}</v-chip>
       </v-chip-group>
-      <v-chip-group v-model="location" selected-class="px-chip--on">
-        <v-chip v-for="l in store.meta.locations" :key="l" :value="l" filter size="small" variant="outlined">
+      <v-chip-group v-if="locationsForCategory.length" v-model="location" selected-class="px-chip--on">
+        <v-chip v-for="l in locationsForCategory" :key="l" :value="l" filter size="small" variant="outlined">
           <v-icon start size="small">mdi-map-marker</v-icon>{{ l }}
         </v-chip>
       </v-chip-group>
@@ -107,7 +132,7 @@ function clearFilters() {
         </v-list-subheader>
         <v-list lines="two" bg-color="transparent" class="px-list py-0">
           <v-list-item
-            v-for="i in g.items"
+            v-for="i in shown(g)"
             :key="i.id"
             :to="{ name: 'item-edit', params: { id: i.id } }"
             :class="{ 'text-disabled': i.status === 'retired' }"
@@ -129,6 +154,16 @@ function clearFilters() {
             </template>
           </v-list-item>
         </v-list>
+        <v-btn
+          v-if="!category && g.items.length > PREVIEW"
+          variant="text"
+          block
+          class="show-more"
+          @click="toggle(g.name)"
+        >
+          <template v-if="isOpen(g.name)"><v-icon start>mdi-chevron-up</v-icon>Show fewer</template>
+          <template v-else><v-icon start>mdi-chevron-down</v-icon>Show all {{ g.items.length }}</template>
+        </v-btn>
       </section>
     </template>
 
@@ -149,10 +184,6 @@ function clearFilters() {
     <div class="px-font text-caption text-medium-emphasis text-center pb-2">
       {{ visible.length }} shown · {{ totalActive }} active
     </div>
-
-    <v-btn class="fab px-btn" :to="{ name: 'item-new' }" aria-label="Add item">
-      <PxIcon name="plus" :size="32" />
-    </v-btn>
   </div>
 </template>
 
@@ -178,6 +209,11 @@ function clearFilters() {
   outline: 2px solid var(--sp-green-dark);
   outline-offset: 2px;
   border-radius: 8px;
+}
+.show-more {
+  color: var(--sp-brown-dark) !important;
+  border-top: 1px solid var(--sp-cream);
+  border-radius: 0 !important;
 }
 .thumb {
   width: 56px;

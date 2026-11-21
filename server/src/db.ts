@@ -1,8 +1,8 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { config, dbFile, photosDir } from './config.js';
-import type { Item, ItemInput, ItemStatus } from './types.js';
+import { normalizeTags, splitTags, type Item, type ItemInput, type ItemStatus } from './types.js';
 
 fs.mkdirSync(config.dataDir, { recursive: true });
 fs.mkdirSync(photosDir, { recursive: true });
@@ -40,6 +40,17 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT
+  );
+  CREATE TABLE IF NOT EXISTS backup_history (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    at              TEXT NOT NULL,
+    ok              INTEGER NOT NULL,
+    reason          TEXT NOT NULL,
+    sqlite_bytes    INTEGER NOT NULL DEFAULT 0,
+    photos_uploaded INTEGER NOT NULL DEFAULT 0,
+    photos_total    INTEGER NOT NULL DEFAULT 0,
+    duration_ms     INTEGER NOT NULL DEFAULT 0,
+    error           TEXT
   );
 `);
 
@@ -107,7 +118,7 @@ export function buildItem(input: ItemInput, base?: Item, opts: { dirty: number }
     size: str(input.size ?? base?.size),
     quantity: 'quantity' in input ? num(input.quantity) : (base?.quantity ?? null),
     remarks: str(input.remarks ?? base?.remarks),
-    tag: str(input.tag ?? base?.tag),
+    tag: normalizeTags(str(input.tag ?? base?.tag)),
     status,
     purchase_date: 'purchase_date' in input ? str(input.purchase_date) || null : (base?.purchase_date ?? null),
     price: 'price' in input ? num(input.price) : (base?.price ?? null),
@@ -160,12 +171,49 @@ export function metaSet(key: string, value: string) {
   stmts.metaSet.run(key, value);
 }
 
+/** Hash of every item row (what a backup protects), independent of bookkeeping tables. */
+export function itemsFingerprint(): string {
+  const rows = db.prepare(`SELECT ${ITEM_COLS} FROM items ORDER BY id`).all();
+  return createHash('sha256').update(JSON.stringify(rows)).digest('hex');
+}
+
+export interface BackupHistoryRow {
+  at: string;
+  ok: boolean;
+  reason: string;
+  sqlite_bytes: number;
+  photos_uploaded: number;
+  photos_total: number;
+  duration_ms: number;
+  error: string | null;
+}
+const histInsert = db.prepare(
+  `INSERT INTO backup_history (at, ok, reason, sqlite_bytes, photos_uploaded, photos_total, duration_ms, error)
+   VALUES (@at, @ok, @reason, @sqlite_bytes, @photos_uploaded, @photos_total, @duration_ms, @error)`,
+);
+const histPrune = db.prepare(`DELETE FROM backup_history WHERE id NOT IN (SELECT id FROM backup_history ORDER BY id DESC LIMIT 200)`);
+const histList = db.prepare(
+  `SELECT at, ok, reason, sqlite_bytes, photos_uploaded, photos_total, duration_ms, error FROM backup_history ORDER BY id DESC LIMIT ?`,
+);
+export function addBackupHistory(row: BackupHistoryRow) {
+  histInsert.run({ ...row, ok: row.ok ? 1 : 0 });
+  histPrune.run();
+}
+export function backupHistory(limit = 20): BackupHistoryRow[] {
+  return (histList.all(limit) as (Omit<BackupHistoryRow, 'ok'> & { ok: number })[]).map((r) => ({ ...r, ok: r.ok === 1 }));
+}
+
 const DISTINCT_COLS = ['category', 'type', 'brand', 'location', 'tag', 'size'] as const;
 export type DistinctCol = (typeof DISTINCT_COLS)[number];
 const distinctStmts = Object.fromEntries(
   DISTINCT_COLS.map((c) => [c, db.prepare(`SELECT DISTINCT ${c} AS v FROM items WHERE ${c} <> '' ORDER BY ${c}`)]),
 ) as Record<DistinctCol, Database.Statement>;
 export function distinctValues(col: DistinctCol): string[] {
-  return (distinctStmts[col].all() as { v: string }[]).map((r) => r.v);
+  const values = (distinctStmts[col].all() as { v: string }[]).map((r) => r.v);
+  if (col !== 'tag') return values;
+  // Tag cells hold comma-separated lists; offer the individual tags.
+  const seen = new Map<string, string>();
+  for (const v of values) for (const t of splitTags(v)) seen.set(t.toLowerCase(), seen.get(t.toLowerCase()) ?? t);
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
 }
 export const transaction = <T>(fn: () => T): T => db.transaction(fn)();

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { backupConfigured, backupNow, lastBackup } from '../backup.js';
+import { backupConfigured, backupNow, history, lastBackup } from '../backup.js';
 import { config } from '../config.js';
 
 export async function backupRoutes(app: FastifyInstance) {
@@ -7,7 +7,8 @@ export async function backupRoutes(app: FastifyInstance) {
     state: backupConfigured(), // ready | no-client | no-token
     folder: config.backupFolder,
     intervalHours: config.backupIntervalMs / 3_600_000,
-    last: lastBackup(),
+    last: lastBackup(), // most recent run, including "nothing changed" checks
+    history: history(20), // runs that uploaded something or failed, newest first
   }));
 
   app.post('/api/backup', async (_req, reply) => {

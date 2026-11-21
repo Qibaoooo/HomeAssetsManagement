@@ -6,6 +6,7 @@ dist/
 !.env.example
 # runtime data (SQLite DB + photos) lives outside git
 data/
+data-test/
 # Google service account key
 secrets/
 .DS_Store

@@ -5,11 +5,16 @@ import { SHEET_COLUMNS, type SheetFields } from './types.js';
 let client: sheets_v4.Sheets | undefined;
 function sheets(): sheets_v4.Sheets {
   if (!client) {
-    const auth = new google.auth.GoogleAuth({
-      keyFile: config.keyFile,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-    client = google.sheets({ version: 'v4', auth });
+    if (config.sheetsApiUrl) {
+      // Mock server (tests): no OAuth, plain API-key style auth, same request shapes.
+      client = google.sheets({ version: 'v4', auth: 'mock', rootUrl: config.sheetsApiUrl });
+    } else {
+      const auth = new google.auth.GoogleAuth({
+        keyFile: config.keyFile,
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+      client = google.sheets({ version: 'v4', auth });
+    }
   }
   return client;
 }
