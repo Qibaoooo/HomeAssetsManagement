@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+# runtime data (SQLite DB + photos) lives outside git
+data/
+# Google service account key
+secrets/
+.DS_Store
+Thumbs.db
