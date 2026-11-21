@@ -1,35 +1,29 @@
 # TODO
 
-## Google Drive backup: one-time setup (blocked on you)
+Google Drive backup is set up and running (OAuth client created, app published, login done,
+first backup verified on 2026-11-21). What remains is housekeeping for the secret files.
 
-Cloud Console, project `homeassetmanagement` (the OAuth pages are under **Google Auth Platform**):
+## Credentials to keep safe (never commit; the repo is public)
 
-- [ ] APIs & Services → Library → enable **Google Drive API**
-- [ ] Google Auth Platform → **Branding**: app name "Home Assets", your email as support/contact
-- [ ] Google Auth Platform → **Data access**: add scope `https://www.googleapis.com/auth/drive.file`
-- [ ] Google Auth Platform → **Audience**: External; add test user `luozhengiw@gmail.com`;
-      set publishing status **In production** (Testing status expires the login every 7 days)
-- [x] Google Auth Platform → **Clients → Create client**: type **Desktop app** → Create →
-      download the JSON → save as `secrets/oauth-client.json` (done 2026-11-21)
-- [ ] **NEXT:** `npm run drive-auth` is running and waiting. Open the URL it printed in a browser on this
-      laptop, sign in as luozhengiw@gmail.com, allow. If the listener is gone, run `npm run drive-auth` again.
-- [ ] Restart the server, then **Back up now** in Settings (or `npm run backup`)
-- [ ] Check the "HomeAssets Backup" folder appears in Drive with `home-assets.sqlite` and `photos/`
+| File | What it is | Keep a copy? |
+| --- | --- | --- |
+| `secrets/service-account.json` | Sheet access for the server | Yes |
+| `secrets/oauth-client.json` | Identifies the app to Google for Drive | Yes |
+| `secrets/drive-token.json` | Your Drive login for the app | Optional; `npm run drive-auth` can recreate it |
 
-Full details: [BACKUP.md](BACKUP.md).
+- [ ] Store copies of the three files in a password manager (secure note or attachment),
+      or in a password-protected archive, so a dead laptop doesn't lose them.
+      Not in Drive, email or chat as plain JSON.
 
-## Credentials to keep safe (never commit; repo is public)
+## When moving the server to the Mac
 
-- `secrets/service-account.json` (sheet access)
-- `secrets/oauth-client.json` (Drive app identity)
-- `secrets/drive-token.json` (Drive login; optional to carry, can re-auth instead)
+- [ ] Stop the Windows server first (so the database isn't mid-write).
+- [ ] Copy `secrets/` to the Mac by AirDrop or USB (or from the password manager).
+- [ ] Rebuild `data/` on the Mac from the Drive backup: `npm run restore`
+      (or copy the Windows `data/` folder if you prefer the exact current state).
+- [ ] Follow [RUNBOOK-mac.md](RUNBOOK-mac.md) for Node, clone, build and the login agent.
+- [ ] Decommission the Windows side once the Mac has run a day:
+      `Unregister-ScheduledTask -TaskName HomeAssets -Confirm:$false` (if it was ever installed).
 
-Store copies in a password manager or carry by AirDrop/USB when moving to the Mac.
-See the credentials table in [BACKUP.md](BACKUP.md) for what to do if one leaks.
-
-## Later
-
-- [ ] Run `scripts/install-task.ps1` (logon task) and `scripts/firewall.ps1` (admin) on the Windows laptop,
-      or follow [RUNBOOK-mac.md](RUNBOOK-mac.md) when moving to the Mac
-- [ ] Consider making the GitHub repo private (Sprout Lands assets are non-redistributable)
-- [ ] Tailscale for access outside home (phase 2)
+If a secret ever leaks: see the table in [BACKUP.md](BACKUP.md) for how to revoke and
+recreate each one.
