@@ -74,6 +74,11 @@ Hourly backup of the database and photos into your Drive, with **Back up now** i
 and `npm run restore` to rebuild `data/` on a new machine. One-time OAuth setup and the
 handling of the secret files are in [docs/BACKUP.md](docs/BACKUP.md).
 
+## Run on the phone
+
+See [docs/RUNBOOK-phone.md](docs/RUNBOOK-phone.md): Termux + proot Ubuntu on the OnePlus 9,
+deployed from the laptop with `scripts/deploy-phone.sh`.
+
 ## Run on a Mac
 
 See [docs/RUNBOOK-mac.md](docs/RUNBOOK-mac.md). Short version: `bash scripts/mac/setup.sh`,

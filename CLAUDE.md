@@ -20,6 +20,9 @@ Workflow for any server or client change:
 
 Never run two instances against the same `data/` folder or with sheet sync on at the same time.
 
+When prod lives on the phone (see `docs/RUNBOOK-phone.md`): same workflow on the laptop, then
+commit and run `scripts/deploy-phone.sh`. Never edit code on the phone.
+
 ## Automated tests: required for backend or database changes
 
 `npm test` runs the sync engine and data layer against an in-memory mock of the Google Sheets
