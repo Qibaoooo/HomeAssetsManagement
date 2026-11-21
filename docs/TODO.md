@@ -15,15 +15,16 @@ first backup verified on 2026-11-21). What remains is housekeeping for the secre
       or in a password-protected archive, so a dead laptop doesn't lose them.
       Not in Drive, email or chat as plain JSON.
 
-## Moving the server to the phone (set up 2026-11-21, not yet live)
+## Server moved to the phone (live since 2026-11-21)
 
-The OnePlus 9 is ready: Ubuntu, Node 22, the repo, `secrets/` and a data snapshot are on it,
-and the server passed a smoke test there with sync off. See [RUNBOOK-phone.md](RUNBOOK-phone.md).
+Prod runs on the OnePlus 9 at `http://192.168.1.102:8787` (IP bound to its MAC in the router).
+See [RUNBOOK-phone.md](RUNBOOK-phone.md). Still to do:
 
+- [ ] Disable the laptop's scheduled task so it never starts a second syncing server at logon:
+      `Disable-ScheduledTask -TaskName HomeAssets` in PowerShell.
 - [ ] Install Termux:Boot (F-Droid/GitHub) and open it once; set Termux battery to Unrestricted.
-- [ ] Give the phone a DHCP reservation in the router (`.101` after the laptop gives it up, or a new address).
-- [ ] Cut over: stop the laptop server, copy fresh `data/`, `home-assets-ctl.sh start`, verify sheet + Drive.
-- [ ] Commit `scripts/deploy-phone.sh`, `scripts/phone/`, `docs/RUNBOOK-phone.md`.
+- [ ] Tell the household the new address (or bind `.101` to the phone later; the vacuum holds it now).
+- [ ] Tap **Back up now** in Settings once and check the Drive folder updated from the phone.
 
 ## When moving the server to the Mac
 
