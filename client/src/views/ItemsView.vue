@@ -51,13 +51,19 @@ const totalActive = computed(() => store.active.length);
 
 /** One standard placeholder for items without a photo. */
 const PLACEHOLDER = 'emoji:cat-purple';
+
+function clearFilters() {
+  search.value = '';
+  category.value = null;
+  location.value = null;
+}
 </script>
 
 <template>
   <div class="page">
     <v-app-bar flat density="comfortable" class="px-appbar">
       <template #prepend>
-        <PxIcon name="house" variant="white" :size="32" class="ml-2" />
+        <PxIcon name="house" :size="32" class="ml-2" />
       </template>
       <v-app-bar-title>Home Assets</v-app-bar-title>
       <template #append>
@@ -87,7 +93,10 @@ const PLACEHOLDER = 'emoji:cat-purple';
     </div>
 
     <v-alert v-if="store.error" class="mx-4 my-2 px-alert px-alert--error" density="compact">
-      {{ store.error }}
+      Could not reach the server: {{ store.error }}
+      <template #append>
+        <v-btn size="small" class="px-btn px-btn--cream" @click="store.load(true)">Retry</v-btn>
+      </template>
     </v-alert>
 
     <template v-if="groups.length">
@@ -113,7 +122,7 @@ const PLACEHOLDER = 'emoji:cat-purple';
             <v-list-item-subtitle>{{ subtitle(i) || '—' }}</v-list-item-subtitle>
             <template #append>
               <div class="d-flex flex-column align-end ga-1">
-                <v-chip v-if="i.quantity != null" size="small" class="px-chip--qty">×{{ i.quantity }}</v-chip>
+                <v-chip v-if="i.quantity != null && i.quantity !== 1" size="small" class="px-chip--qty">×{{ i.quantity }}</v-chip>
                 <v-chip v-if="i.status === 'retired'" size="x-small" class="px-chip--muted">retired</v-chip>
                 <PxIcon v-else-if="i.dirty" name="exclaim" :size="16" title="not yet in the sheet" />
               </div>
@@ -126,7 +135,8 @@ const PLACEHOLDER = 'emoji:cat-purple';
     <div v-else-if="!store.loading" class="px-panel mx-4 text-center text-medium-emphasis pa-6">
       <template v-if="store.items.length">
         <PxIcon name="emoji:bunny-question" :size="64" class="mb-2" />
-        <div>Nothing matches your filters.</div>
+        <div>Nothing matches your search or filters.</div>
+        <v-btn class="px-btn px-btn--cream mt-3" @click="clearFilters">Clear filters</v-btn>
       </template>
       <template v-else>
         <PxSprite name="bunny-sleep" :size="64" :fps="2" class="mb-2" />
@@ -163,6 +173,11 @@ const PLACEHOLDER = 'emoji:cat-purple';
 }
 .mascot:active {
   transform: translateY(2px);
+}
+.mascot:focus-visible {
+  outline: 2px solid var(--sp-green-dark);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 .thumb {
   width: 56px;

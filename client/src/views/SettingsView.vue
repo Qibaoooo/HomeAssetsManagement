@@ -46,7 +46,7 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
   <div class="page">
     <v-app-bar flat density="comfortable" class="px-appbar">
       <template #prepend>
-        <PxIcon name="gear" variant="white" :size="32" class="ml-2" />
+        <PxIcon name="gear" :size="32" class="ml-2" />
       </template>
       <v-app-bar-title>Settings</v-app-bar-title>
     </v-app-bar>

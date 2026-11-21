@@ -135,11 +135,18 @@ async function setStatus(status: 'active' | 'retired') {
   }
 }
 
-// Suggest the usual types for the chosen category first.
+// Type suggestions come only from the chosen category; with no category yet, offer every type.
 const typeSuggestions = computed(() => {
-  const inCat = new Set(store.items.filter((i) => i.category === form.category).map((i) => i.type));
-  return [...inCat, ...store.meta.types.filter((t) => !inCat.has(t))].filter(Boolean);
+  const cat = form.category.trim().toLowerCase();
+  if (!cat) return store.meta.types;
+  const inCat = new Set(
+    store.items.filter((i) => i.category.toLowerCase() === cat).map((i) => i.type).filter(Boolean),
+  );
+  return [...inCat].sort((a, b) => a.localeCompare(b));
 });
+
+// Shared field props: labels always float (like sheet headers), no reserved message row.
+const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true, class: 'mb-3' } as const;
 </script>
 
 <template>
@@ -150,9 +157,7 @@ const typeSuggestions = computed(() => {
       </template>
       <v-app-bar-title>{{ isNew ? 'New item' : 'Edit item' }}</v-app-bar-title>
       <template #append>
-        <v-btn class="px-btn mr-2" :disabled="!valid" :loading="saving" @click="save">
-          <PxIcon name="check" :size="20" class="mr-1" />Save
-        </v-btn>
+        <v-btn class="px-btn px-btn--cream mr-2" :disabled="!valid" :loading="saving" @click="save">Save</v-btn>
       </template>
     </v-app-bar>
 
@@ -174,58 +179,58 @@ const typeSuggestions = computed(() => {
           <v-icon start>mdi-image-multiple</v-icon>Choose
         </v-btn>
         <v-btn v-if="shownPhoto" class="px-btn px-btn--grey px-btn--icon" aria-label="Remove photo" @click="clearPhoto">
-          <PxIcon name="cross" :size="20" />
+          <v-icon>mdi-close</v-icon>
         </v-btn>
       </div>
       <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onPicked" />
       <input ref="galleryInput" type="file" accept="image/*" hidden @change="onPicked" />
 
-      <v-combobox v-model="form.category" label="Category" :items="store.meta.categories" autocapitalize="words" />
-      <v-combobox v-model="form.type" label="Type" :items="typeSuggestions" autocapitalize="words" />
-      <v-text-field v-model="form.design" label="Design" autocapitalize="words" />
-      <v-combobox v-model="form.brand" label="Brand" :items="store.meta.brands" autocapitalize="words" />
+      <v-combobox v-model="form.category" label="Category" :items="store.meta.categories" v-bind="field" autocapitalize="words" />
+      <v-combobox v-model="form.type" label="Type" :items="typeSuggestions" v-bind="field" autocapitalize="words" />
+      <v-text-field v-model="form.design" label="Design" v-bind="field" autocapitalize="words" />
+      <v-combobox v-model="form.brand" label="Brand" :items="store.meta.brands" v-bind="field" autocapitalize="words" />
 
       <v-row dense>
         <v-col cols="7">
-          <v-combobox v-model="form.location" label="Location" :items="store.meta.locations" />
+          <v-combobox v-model="form.location" label="Location" :items="store.meta.locations" v-bind="field" />
         </v-col>
         <v-col cols="5">
-          <v-combobox v-model="form.size" label="Size" :items="store.meta.sizes" />
+          <v-combobox v-model="form.size" label="Size" :items="store.meta.sizes" v-bind="field" />
         </v-col>
       </v-row>
 
-      <v-text-field v-model.number="form.quantity" label="Quantity" type="number" inputmode="numeric" min="0" class="qty">
+      <v-text-field v-model.number="form.quantity" label="Quantity" type="number" inputmode="numeric" min="0" class="qty" v-bind="field">
         <template #prepend-inner>
-          <button type="button" class="qty-btn" aria-label="Decrease" @click="step(-1)"><PxIcon name="minus" :size="16" /></button>
+          <button type="button" class="qty-btn" aria-label="Decrease quantity" @click="step(-1)"><v-icon size="20">mdi-minus</v-icon></button>
         </template>
         <template #append-inner>
-          <button type="button" class="qty-btn" aria-label="Increase" @click="step(1)"><PxIcon name="plus" :size="16" /></button>
+          <button type="button" class="qty-btn" aria-label="Increase quantity" @click="step(1)"><v-icon size="20">mdi-plus</v-icon></button>
         </template>
       </v-text-field>
 
-      <v-combobox v-model="form.tag" label="Tag" :items="store.meta.tags" />
+      <v-combobox v-model="form.tag" label="Tag" :items="store.meta.tags" v-bind="field" />
 
       <v-row dense>
         <v-col cols="7">
-          <v-text-field v-model="form.purchase_date" label="purchase_date" type="date" clearable />
+          <v-text-field v-model="form.purchase_date" label="purchase_date" type="date" clearable v-bind="field" />
         </v-col>
         <v-col cols="5">
-          <v-text-field v-model.number="form.price" label="price" type="number" inputmode="decimal" step="0.01" min="0" prefix="$" clearable />
+          <v-text-field v-model.number="form.price" label="price" type="number" inputmode="decimal" step="0.01" min="0" prefix="$" clearable v-bind="field" />
         </v-col>
       </v-row>
 
-      <v-textarea v-model="form.remarks" label="Remarks" rows="2" auto-grow />
+      <v-textarea v-model="form.remarks" label="Remarks" rows="2" auto-grow v-bind="field" />
 
-      <v-btn type="submit" class="px-btn px-btn--brown mt-2" size="large" block :disabled="!valid" :loading="saving">
-        <PxIcon name="check" variant="white" :size="20" class="mr-2" />{{ isNew ? 'Add item' : 'Save changes' }}
+      <v-btn type="submit" class="px-btn px-btn--primary mt-2" size="large" block :disabled="!valid" :loading="saving">
+        {{ isNew ? 'Add item' : 'Save changes' }}
       </v-btn>
 
       <template v-if="existing">
         <v-btn v-if="existing.status === 'active'" variant="text" color="error" block class="mt-3" @click="confirmRetire = true">
-          <PxIcon name="ban" :size="20" class="mr-2" />Retire this item
+          <v-icon start>mdi-archive-arrow-down-outline</v-icon>Retire this item
         </v-btn>
         <v-btn v-else class="px-btn px-btn--cream mt-3" block @click="setStatus('active')">
-          <PxIcon name="star" :size="20" class="mr-2" />Restore to active
+          <v-icon start>mdi-archive-arrow-up-outline</v-icon>Restore to active
         </v-btn>
         <div class="text-caption text-medium-emphasis text-center mt-4">
           Last updated {{ new Date(existing.updated_at).toLocaleString() }}
@@ -243,7 +248,7 @@ const typeSuggestions = computed(() => {
         <v-card-actions class="ga-2 px-3 pb-3">
           <v-spacer />
           <v-btn class="px-btn px-btn--cream" @click="confirmRetire = false">Cancel</v-btn>
-          <v-btn class="px-btn px-btn--brown" :loading="saving" @click="setStatus('retired')">Retire</v-btn>
+          <v-btn class="px-btn px-btn--primary" :loading="saving" @click="setStatus('retired')">Retire</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -252,25 +257,24 @@ const typeSuggestions = computed(() => {
 
 <style scoped>
 .qty-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--sp-sand);
-  border: 2px solid var(--sp-brown);
-  border-radius: 3px;
-  box-shadow: 0 2px 0 var(--sp-brown-dark);
+  color: var(--sp-plum);
+  border: 1px solid var(--sp-tan-dark);
+  border-radius: 8px;
   cursor: pointer;
   padding: 0;
 }
 .qty-btn:active {
-  transform: translateY(2px);
-  box-shadow: none;
+  background: var(--sp-tan);
 }
 .qty :deep(input) {
   text-align: center;
-  font-family: 'Sprout', monospace;
-  font-size: 21px;
+  font-size: 18px;
+  font-weight: 600;
 }
 </style>

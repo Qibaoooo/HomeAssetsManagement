@@ -17,10 +17,10 @@
   --sp-brown-dark: #90625d;
   --sp-plum: #6b4b5b;
   --sp-ink: #474a4b;
-  --sp-muted: #818b83;
+  --sp-muted: #6f6059;
   --sp-green: #c0d470;
   --sp-green-dark: #7f9a3c;
-  --sp-rose: #c9707a;
+  --sp-rose: #9e4450;
   --sp-radius: 12px;
 }
 
@@ -74,6 +74,10 @@
 }
 
 /* ---- buttons ---------------------------------------------------------- */
+.v-btn {
+  text-transform: none;
+  letter-spacing: 0;
+}
 .px-btn {
   background: var(--sp-sand) !important;
   color: var(--sp-plum) !important;
@@ -88,8 +92,8 @@
   background: var(--sp-paper) !important;
   border: 1px solid var(--sp-tan) !important;
 }
-.px-btn--brown {
-  background: var(--sp-brown) !important;
+.px-btn--primary {
+  background: var(--sp-plum) !important;
   color: var(--sp-paper) !important;
 }
 .px-btn--grey {
@@ -110,8 +114,9 @@
   color: var(--sp-ink) !important;
 }
 .px-appbar {
-  background: var(--sp-tan-dark) !important;
-  color: var(--sp-paper) !important;
+  background: var(--sp-sand) !important;
+  color: var(--sp-plum) !important;
+  border-bottom: 1px solid var(--sp-tan);
 }
 .px-nav {
   background: var(--sp-sand) !important;
@@ -120,14 +125,16 @@
   height: auto !important;
 }
 .px-nav .v-btn {
-  color: var(--sp-brown-dark) !important;
+  color: var(--sp-plum) !important;
+  opacity: 0.8;
   font-size: 12px !important;
   text-transform: none !important;
   letter-spacing: 0 !important;
   min-height: 56px;
 }
 .px-nav .v-btn--active {
-  color: var(--sp-plum) !important;
+  opacity: 1;
+  font-weight: 600;
 }
 .px-nav .v-btn--active .v-btn__content::after {
   content: '';
@@ -156,6 +163,22 @@
 .v-label {
   color: var(--sp-brown-dark) !important;
   opacity: 1 !important;
+}
+.v-field input::placeholder,
+.v-field textarea::placeholder {
+  color: var(--sp-muted) !important;
+  opacity: 1 !important;
+}
+.v-messages {
+  color: var(--sp-muted) !important;
+  opacity: 1 !important;
+}
+/* visible keyboard focus on every custom control */
+button:focus-visible,
+a:focus-visible,
+.v-btn:focus-visible {
+  outline: 2px solid var(--sp-green-dark) !important;
+  outline-offset: 2px;
 }
 
 /* ---- chips ------------------------------------------------------------ */
@@ -197,6 +220,11 @@
 .px-list .v-list-item-title {
   font-weight: 600;
   color: var(--sp-ink);
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .px-list .v-list-item-subtitle {
   color: var(--sp-muted);
