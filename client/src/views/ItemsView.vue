@@ -49,14 +49,8 @@ const subtitle = (i: Item) =>
   [i.brand, i.location, i.size, i.tag && i.tag !== '-' ? `#${i.tag}` : ''].filter(Boolean).join(' · ');
 const totalActive = computed(() => store.active.length);
 
-// Items without a photo get a cat, picked per item so it stays the same between visits.
-const CATS = ['cat-green', 'cat-lime', 'cat-yellow', 'cat-orange', 'cat-pink', 'cat-blue', 'cat-purple'];
-const catFor = (i: Item) => {
-  if (i.status === 'retired') return 'emoji:cat-skull';
-  let h = 0;
-  for (const ch of i.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return `emoji:${CATS[h % CATS.length]}`;
-};
+/** One standard placeholder for items without a photo. */
+const PLACEHOLDER = 'emoji:bunny-dizzy';
 </script>
 
 <template>
@@ -98,7 +92,7 @@ const catFor = (i: Item) => {
 
     <template v-if="groups.length">
       <section v-for="g in groups" :key="g.name" class="px-panel mx-4 mb-3">
-        <v-list-subheader class="px-2">
+        <v-list-subheader class="px-4 pt-2">
           {{ g.name }}
           <span class="text-medium-emphasis ml-1">({{ g.items.length }})</span>
         </v-list-subheader>
@@ -112,7 +106,7 @@ const catFor = (i: Item) => {
             <template #prepend>
               <div class="px-slot thumb mr-3">
                 <img v-if="i.thumb_url" :src="i.thumb_url" alt="" />
-                <PxIcon v-else :name="catFor(i)" :size="40" />
+                <PxIcon v-else :name="PLACEHOLDER" :size="40" />
               </div>
             </template>
             <v-list-item-title>{{ title(i) }}</v-list-item-title>
@@ -171,8 +165,8 @@ const catFor = (i: Item) => {
   transform: translateY(2px);
 }
 .thumb {
-  width: 60px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;

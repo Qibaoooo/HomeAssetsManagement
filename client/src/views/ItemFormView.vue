@@ -165,7 +165,7 @@ const typeSuggestions = computed(() => {
       <div class="px-panel px-panel--dark mb-2">
         <div class="photo-frame" :class="{ 'photo-frame--empty': !shownPhoto }">
           <img v-if="shownPhoto" :src="shownPhoto" alt="item photo" />
-          <PxIcon v-else name="emoji:cat-yellow" :size="80" />
+          <PxIcon v-else name="emoji:bunny-dizzy" :size="80" />
         </div>
       </div>
       <div class="d-flex ga-2 mb-5">
