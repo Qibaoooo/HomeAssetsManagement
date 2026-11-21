@@ -12,7 +12,8 @@ defineOptions({ name: 'ItemsView' });
 const store = useItems();
 const settings = useSettings();
 
-const search = ref('');
+// Vuetify's clear button sets the model to null, so the type admits it.
+const search = ref<string | null>('');
 const category = ref<string | null>(null);
 const location = ref<string | null>(null);
 
@@ -48,7 +49,7 @@ const isOpen = (name: string) => !!category.value || expanded.value.has(name);
 const shown = (g: { name: string; items: Item[] }) => (isOpen(g.name) ? g.items : g.items.slice(0, PREVIEW));
 
 const visible = computed(() => {
-  const q = norm(search.value.trim());
+  const q = norm((search.value ?? '').trim());
   return store.items.filter((i) => {
     if (!settings.showRetired && i.status === 'retired') return false;
     if (category.value && i.category !== category.value) return false;
