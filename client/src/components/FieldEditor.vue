@@ -333,7 +333,7 @@ html.fe-open body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: calc(12px + env(safe-area-inset-top)) 12px 12px;
+  padding: calc(48px + env(safe-area-inset-top)) 12px 12px;
 }
 .fe__card {
   display: flex;
