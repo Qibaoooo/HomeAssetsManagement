@@ -2,6 +2,11 @@
 
 ## Everyday use
 
+- **The item form is a list of rows, not input boxes.** Tap a row to edit that one field: the
+  input sits at the top of the screen and the suggestions fill the space above the keyboard.
+  *Next* moves to the following field without closing the keyboard; a new item starts on
+  Category so adding is a straight run through the fields. Tap a suggestion to use it, or type
+  a new value and tap *Next* or *Done*. Quantity can also be nudged with the − / + on its row.
 - **New category, brand, location, tag:** just type it in the form. Those fields are free
   text with suggestions. A category appears as a filter chip once one item has it. Spelling
   matters: `Kitchen` and `kitchen` become two categories, so pick the suggestion when one exists.

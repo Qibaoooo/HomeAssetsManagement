@@ -12,3 +12,4 @@ data-test/
 secrets/
 .DS_Store
 Thumbs.db
+.playwright-mcp/

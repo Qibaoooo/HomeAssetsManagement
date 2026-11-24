@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { api } from '../api';
+import FieldEditor, { type FieldDef, type FieldValue } from '../components/FieldEditor.vue';
 import PxIcon from '../components/PxIcon.vue';
 import { useItems } from '../stores/items';
 import { useSettings } from '../stores/settings';
@@ -38,6 +39,11 @@ const form = reactive<Required<Omit<ItemInput, 'updated_by' | 'status'>>>({
   price: null,
 });
 
+// Tags: edited as a list, stored in the sheet as one comma-separated string.
+const tags = ref<string[]>([]);
+const splitTags = (s: string) =>
+  s.split(',').map((t) => t.trim()).filter((t, i, a) => t && a.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
+
 function fill(item: Item) {
   existing.value = item;
   form.category = item.category;
@@ -65,8 +71,112 @@ onMounted(async () => {
     } finally {
       loading.value = false;
     }
+  } else {
+    // A new item starts in the editor on the first field, so adding is one tap shorter.
+    openField('category');
   }
 });
+
+// ---- fields ------------------------------------------------------------------
+// Rows on the page, in the order Next walks through them. Labels match the sheet headers.
+type Key = keyof typeof form | 'tag';
+const GROUPS: FieldDef[][] = [
+  [
+    { key: 'category', label: 'Category', kind: 'text', words: true },
+    { key: 'type', label: 'Type', kind: 'text', words: true },
+    { key: 'design', label: 'Design', kind: 'text', words: true },
+    { key: 'brand', label: 'Brand', kind: 'text', words: true },
+  ],
+  [
+    { key: 'location', label: 'Location', kind: 'text' },
+    { key: 'size', label: 'Size', kind: 'text' },
+    { key: 'quantity', label: 'Quantity', kind: 'number' },
+    { key: 'tag', label: 'Tag', kind: 'tags', hint: 'Several allowed: tap suggestions, or type and press Enter.' },
+  ],
+  [
+    { key: 'purchase_date', label: 'purchase_date', kind: 'date' },
+    { key: 'price', label: 'price', kind: 'decimal', prefix: '$' },
+    { key: 'remarks', label: 'Remarks', kind: 'multiline' },
+  ],
+];
+const FIELDS = GROUPS.flat();
+
+const editing = ref<Key | null>(null);
+const editingDef = computed(() => FIELDS.find((f) => f.key === editing.value) ?? null);
+const editingIndex = computed(() => FIELDS.findIndex((f) => f.key === editing.value));
+const hasNext = computed(() => editingIndex.value >= 0 && editingIndex.value < FIELDS.length - 1);
+
+function openField(key: Key) {
+  editing.value = key;
+}
+function nextField() {
+  if (hasNext.value) editing.value = FIELDS[editingIndex.value + 1].key as Key;
+  else editing.value = null;
+}
+function closeEditor() {
+  editing.value = null;
+}
+
+const editingValue = computed<FieldValue>({
+  get: () => {
+    const k = editing.value;
+    if (!k) return null;
+    if (k === 'tag') return tags.value;
+    return form[k];
+  },
+  set: (v) => {
+    const k = editing.value;
+    if (!k) return;
+    if (k === 'tag') tags.value = Array.isArray(v) ? v : [];
+    else if (k === 'quantity' || k === 'price') form[k] = typeof v === 'number' ? v : null;
+    else if (k === 'purchase_date') form.purchase_date = typeof v === 'string' && v ? v : null;
+    else form[k] = typeof v === 'string' ? v : '';
+  },
+});
+
+// Type suggestions come only from the chosen category; with no category yet, offer every type.
+const typeSuggestions = computed(() => {
+  const cat = form.category.trim().toLowerCase();
+  if (!cat) return store.meta.types;
+  const inCat = new Set(
+    store.items.filter((i) => i.category.toLowerCase() === cat).map((i) => i.type).filter(Boolean),
+  );
+  return [...inCat].sort((a, b) => a.localeCompare(b));
+});
+const suggestions = computed<string[]>(() => {
+  switch (editing.value) {
+    case 'category':
+      return store.meta.categories;
+    case 'type':
+      return typeSuggestions.value;
+    case 'brand':
+      return store.meta.brands;
+    case 'location':
+      return store.meta.locations;
+    case 'size':
+      return store.meta.sizes;
+    case 'tag':
+      return store.meta.tags;
+    default:
+      return [];
+  }
+});
+
+// What a row shows when the editor is closed.
+function display(key: Key): string {
+  switch (key) {
+    case 'tag':
+      return tags.value.map((t) => `#${t}`).join('  ');
+    case 'quantity':
+      return form.quantity == null ? '' : String(form.quantity);
+    case 'price':
+      return form.price == null ? '' : `$${form.price}`;
+    case 'purchase_date':
+      return form.purchase_date ?? '';
+    default:
+      return form[key] ?? '';
+  }
+}
 
 // ---- photo ---------------------------------------------------------------
 const cameraInput = ref<HTMLInputElement>();
@@ -141,24 +251,6 @@ async function setStatus(status: 'active' | 'retired') {
     confirmRetire.value = false;
   }
 }
-
-// Type suggestions come only from the chosen category; with no category yet, offer every type.
-const typeSuggestions = computed(() => {
-  const cat = form.category.trim().toLowerCase();
-  if (!cat) return store.meta.types;
-  const inCat = new Set(
-    store.items.filter((i) => i.category.toLowerCase() === cat).map((i) => i.type).filter(Boolean),
-  );
-  return [...inCat].sort((a, b) => a.localeCompare(b));
-});
-
-// Tags: edited as chips, stored in the sheet as one comma-separated string.
-const tags = ref<string[]>([]);
-const splitTags = (s: string) =>
-  s.split(',').map((t) => t.trim()).filter((t, i, a) => t && a.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
-
-// Shared field props: labels always float (like sheet headers), no reserved message row.
-const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true, class: 'mb-3' } as const;
 </script>
 
 <template>
@@ -175,7 +267,7 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
 
     <v-progress-linear v-if="loading" indeterminate />
 
-    <v-form v-else class="pa-4" @submit.prevent="save">
+    <div v-else class="pa-4">
       <!-- photo -->
       <div class="px-panel px-panel--dark mb-2">
         <div class="photo-frame" :class="{ 'photo-frame--empty': !shownPhoto }">
@@ -197,53 +289,34 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
       <input ref="cameraInput" type="file" accept="image/*" capture="environment" hidden @change="onPicked" />
       <input ref="galleryInput" type="file" accept="image/*" hidden @change="onPicked" />
 
-      <v-combobox v-model="form.category" label="Category" :items="store.meta.categories" v-bind="field" autocapitalize="words" />
-      <v-combobox v-model="form.type" label="Type" :items="typeSuggestions" v-bind="field" autocapitalize="words" />
-      <v-text-field v-model="form.design" label="Design" v-bind="field" autocapitalize="words" />
-      <v-combobox v-model="form.brand" label="Brand" :items="store.meta.brands" v-bind="field" autocapitalize="words" />
+      <!-- fields as rows: nothing here opens a keyboard; tapping a row opens the editor -->
+      <div v-for="(group, gi) in GROUPS" :key="gi" class="px-panel mb-3 rows">
+        <button
+          v-for="f in group"
+          :key="f.key"
+          type="button"
+          class="frow"
+          :class="{ 'frow--empty': !display(f.key as Key) }"
+          @click="openField(f.key as Key)"
+        >
+          <span class="frow__label">{{ f.label }}</span>
+          <template v-if="f.key === 'quantity'">
+            <span class="frow__qty">
+              <span class="qty-btn" role="button" tabindex="0" aria-label="Decrease quantity" @click.stop="step(-1)" @keydown.enter.stop.prevent="step(-1)">
+                <v-icon size="18">mdi-minus</v-icon>
+              </span>
+              <span class="frow__value frow__value--qty">{{ display('quantity') || '0' }}</span>
+              <span class="qty-btn" role="button" tabindex="0" aria-label="Increase quantity" @click.stop="step(1)" @keydown.enter.stop.prevent="step(1)">
+                <v-icon size="18">mdi-plus</v-icon>
+              </span>
+            </span>
+          </template>
+          <span v-else class="frow__value">{{ display(f.key as Key) || 'Tap to add' }}</span>
+          <v-icon size="18" class="frow__chev">mdi-chevron-right</v-icon>
+        </button>
+      </div>
 
-      <v-row dense>
-        <v-col cols="7">
-          <v-combobox v-model="form.location" label="Location" :items="store.meta.locations" v-bind="field" />
-        </v-col>
-        <v-col cols="5">
-          <v-combobox v-model="form.size" label="Size" :items="store.meta.sizes" v-bind="field" />
-        </v-col>
-      </v-row>
-
-      <v-text-field v-model.number="form.quantity" label="Quantity" type="number" inputmode="numeric" min="0" class="qty" v-bind="field">
-        <template #prepend-inner>
-          <button type="button" class="qty-btn" aria-label="Decrease quantity" @click="step(-1)"><v-icon size="20">mdi-minus</v-icon></button>
-        </template>
-        <template #append-inner>
-          <button type="button" class="qty-btn" aria-label="Increase quantity" @click="step(1)"><v-icon size="20">mdi-plus</v-icon></button>
-        </template>
-      </v-text-field>
-
-      <v-combobox
-        v-model="tags"
-        label="Tag"
-        :items="store.meta.tags"
-        multiple
-        chips
-        closable-chips
-        :delimiters="[',']"
-        hint="Type a tag and press Enter or comma. Several allowed."
-        v-bind="{ ...field, hideDetails: 'auto' }"
-      />
-
-      <v-row dense>
-        <v-col cols="7">
-          <v-text-field v-model="form.purchase_date" label="purchase_date" type="date" clearable v-bind="field" />
-        </v-col>
-        <v-col cols="5">
-          <v-text-field v-model.number="form.price" label="price" type="number" inputmode="decimal" step="0.01" min="0" prefix="$" clearable v-bind="field" />
-        </v-col>
-      </v-row>
-
-      <v-textarea v-model="form.remarks" label="Remarks" rows="2" auto-grow v-bind="field" />
-
-      <v-btn type="submit" class="px-btn px-btn--primary mt-2" size="large" block :disabled="!valid" :loading="saving">
+      <v-btn class="px-btn px-btn--primary mt-2" size="large" block :disabled="!valid" :loading="saving" @click="save">
         {{ isNew ? 'Add item' : 'Save changes' }}
       </v-btn>
 
@@ -259,7 +332,17 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
           <span v-if="existing.updated_by">by {{ existing.updated_by }}</span>
         </div>
       </template>
-    </v-form>
+    </div>
+
+    <FieldEditor
+      v-model="editingValue"
+      :open="editing !== null"
+      :field="editingDef"
+      :suggestions="suggestions"
+      :has-next="hasNext"
+      @next="nextField"
+      @done="closeEditor"
+    />
 
     <v-dialog v-model="confirmRetire" max-width="360">
       <v-card class="px-panel" title="Retire this item?">
@@ -278,25 +361,73 @@ const field = { persistentPlaceholder: true, placeholder: ' ', hideDetails: true
 </template>
 
 <style scoped>
+.rows {
+  padding: 2px 0;
+}
+.frow {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px 8px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--sp-cream);
+  text-align: left;
+  font: inherit;
+  color: var(--sp-ink);
+  cursor: pointer;
+}
+.frow:last-child {
+  border-bottom: none;
+}
+.frow:active {
+  background: var(--sp-cream);
+}
+.frow__label {
+  font-size: 13px;
+  color: var(--sp-brown-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.frow__value {
+  font-size: 16px;
+  font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.frow--empty .frow__value {
+  color: var(--sp-muted);
+  font-weight: 400;
+}
+.frow__chev {
+  color: var(--sp-tan-dark);
+}
+.frow__qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.frow__value--qty {
+  min-width: 28px;
+  text-align: center;
+  font-size: 18px;
+}
 .qty-btn {
-  width: 40px;
-  height: 40px;
-  display: flex;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   background: var(--sp-sand);
   color: var(--sp-plum);
   border: 1px solid var(--sp-tan-dark);
   border-radius: 8px;
-  cursor: pointer;
-  padding: 0;
 }
 .qty-btn:active {
   background: var(--sp-tan);
-}
-.qty :deep(input) {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 600;
 }
 </style>
