@@ -197,7 +197,7 @@ const inputMode = computed(() => {
 <template>
   <Teleport to="body">
     <Transition name="fe">
-      <div v-if="open && field" class="fe" :style="box" role="dialog" aria-modal="true" :aria-label="field.label">
+      <div v-if="open && field" class="fe" :style="box" role="dialog" aria-modal="true" :aria-label="field.label" @click.self="finish">
         <div class="fe__card">
           <div class="fe__bar">
             <button type="button" class="fe__nav" aria-label="Close" @click="finish">
@@ -328,33 +328,32 @@ html.fe-open body {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: var(--sp-cream);
+  background: rgba(107, 75, 91, 0.4);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: calc(12px + env(safe-area-inset-top)) 12px 12px;
 }
 .fe__card {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
   min-height: 0;
+  background: var(--sp-cream);
+  border: 1px solid var(--sp-tan);
+  border-radius: var(--sp-radius);
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(107, 75, 91, 0.3);
 }
 @media (min-width: 600px) {
   .fe {
-    background: rgba(107, 75, 91, 0.45);
-    align-items: center;
-    justify-content: flex-start;
     padding-top: 8vh;
   }
   .fe__card {
-    width: 480px;
-    max-width: calc(100% - 32px);
-    height: auto;
     max-height: 80vh;
-    background: var(--sp-cream);
-    border: 1px solid var(--sp-tan);
-    border-radius: var(--sp-radius);
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(107, 75, 91, 0.25);
   }
 }
 
@@ -363,7 +362,6 @@ html.fe-open body {
   align-items: center;
   background: var(--sp-sand);
   border-bottom: 1px solid var(--sp-tan);
-  padding-top: env(safe-area-inset-top);
   min-height: 52px;
 }
 .fe__title {
@@ -395,7 +393,7 @@ html.fe-open body {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 12px 16px 0;
+  margin: 12px 12px 0;
   padding: 4px 8px 4px 14px;
   background: var(--sp-paper);
   border: 2px solid var(--sp-brown);
@@ -487,7 +485,7 @@ html.fe-open body {
   padding: 6px 0;
 }
 .fe__hint {
-  margin: 6px 20px 0;
+  margin: 6px 16px 0;
   font-size: 13px;
   color: var(--sp-muted);
 }
@@ -497,8 +495,8 @@ html.fe-open body {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  margin: 10px 16px 0;
-  padding-bottom: 16px;
+  margin: 10px 12px 0;
+  padding-bottom: 12px;
 }
 .fe__opt {
   display: flex;
@@ -541,6 +539,6 @@ html.fe-open body {
 .fe-enter-from,
 .fe-leave-to {
   opacity: 0;
-  transform: translateY(12px);
+  transform: translateY(-10px);
 }
 </style>
