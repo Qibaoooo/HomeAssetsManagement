@@ -1,4 +1,4 @@
-import type { BackupResult, BackupStatus, Item, ItemInput, ItemStatus, Meta, SyncResult, SyncStatus } from './types';
+import type { BackupResult, BackupStatus, Item, ItemInput, ItemStatus, LocationUsage, Meta, SyncResult, SyncStatus } from './types';
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
@@ -39,6 +39,14 @@ export const api = {
   categories: () => request<{ category: string; active: number; retired: number }[]>('/api/categories'),
   renameCategory: (from: string, to: string, updated_by: string) =>
     request<{ changed: number; synced: boolean }>('/api/categories/rename', json('POST', { from, to, updated_by })),
+  locations: () => request<LocationUsage>('/api/locations'),
+  addLocation: (path: string) => request<{ path: string; synced: boolean }>('/api/locations', json('POST', { path })),
+  renameLocation: (from: string, to: string, updated_by: string) =>
+    request<{ changed: number; synced: boolean }>('/api/locations/rename', json('POST', { from, to, updated_by })),
+  deleteLocation: (path: string, reassign_to: string | null, updated_by: string) =>
+    request<{ changed: number; synced: boolean }>('/api/locations/delete', json('POST', { path, reassign_to, updated_by })),
+  reorderLocation: (path: string, direction: 'up' | 'down') =>
+    request<{ synced: boolean }>('/api/locations/reorder', json('POST', { path, direction })),
   backupStatus: () => request<BackupStatus>('/api/backup/status'),
   backup: () => request<{ result: BackupResult }>('/api/backup', { method: 'POST' }),
 };

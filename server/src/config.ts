@@ -17,6 +17,8 @@ export const config = {
   port: Number(env('PORT', '8787')),
   sheetId: env('SHEET_ID', '1tEzE0h4k8TVHYLXmiyBs-3Hsq20Lygv5QNrE0Z_9IH4'),
   sheetTab: env('SHEET_TAB', 'HomeAssets'),
+  // Tab holding the location tree, one full path per row (created on first sync).
+  locationsTab: env('LOCATIONS_TAB', 'Locations'),
   keyFile: path.resolve(REPO_ROOT, env('GOOGLE_KEY_FILE', 'secrets/service-account.json')),
   dataDir: path.resolve(REPO_ROOT, env('DATA_DIR', 'data')),
   clientDist: path.resolve(REPO_ROOT, 'client', 'dist'),

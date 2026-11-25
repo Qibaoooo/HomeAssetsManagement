@@ -4,9 +4,11 @@
  *   PUT  /v4/spreadsheets/:id/values/:range            (values.update)
  *   POST /v4/spreadsheets/:id/values:batchUpdate       (values.batchUpdate)
  *   POST /v4/spreadsheets/:id/values/:range:append     (values.append)
+ *   POST /v4/spreadsheets/:id:batchUpdate              (spreadsheets.batchUpdate, addSheet only)
  *
  * Behaves like the real API where it matters for sync: trailing empty cells and rows are
- * omitted from reads, and append writes after the last non-empty row of the tab.
+ * omitted from reads, append writes after the last non-empty row of the tab, and a range on a
+ * tab that does not exist fails with 400 "Unable to parse range".
  */
 import http from 'node:http';
 
@@ -58,32 +60,46 @@ export function parseRange(raw: string): Range {
 
 export interface MockSheets {
   url: string;
+  /** main tab */
   grid: () => Grid;
   set: (rows: Grid) => void;
   cell: (row: number, col: number, value: string) => void; // 0-based
   deleteRow: (row: number) => void; // 0-based
+  /** any other tab: undefined when it does not exist */
+  tab: (name: string) => Grid | undefined;
+  setTab: (name: string, rows: Grid) => void;
+  dropTab: (name: string) => void;
   calls: { method: string; path: string }[];
   close: () => Promise<void>;
 }
 
+class MissingTab extends Error {}
+
+const trimmed = (rows: Grid): Grid => {
+  const out = rows.map((r) => {
+    let end = r.length;
+    while (end > 0 && (r[end - 1] ?? '') === '') end--;
+    return r.slice(0, end);
+  });
+  while (out.length && out[out.length - 1]!.length === 0) out.pop();
+  return out;
+};
+
 export async function startMockSheets(opts: { tab: string; rows: Grid; port?: number }): Promise<MockSheets> {
-  let grid: Grid = opts.rows.map((r) => [...r]);
+  const tabs = new Map<string, Grid>([[opts.tab, opts.rows.map((r) => [...r])]]);
   const calls: { method: string; path: string }[] = [];
 
-  const trimmed = (rows: Grid): Grid => {
-    const out = rows.map((r) => {
-      let end = r.length;
-      while (end > 0 && (r[end - 1] ?? '') === '') end--;
-      return r.slice(0, end);
-    });
-    while (out.length && out[out.length - 1]!.length === 0) out.pop();
-    return out;
+  const gridOf = (tab: string): Grid => {
+    const g = tabs.get(tab);
+    if (!g) throw new MissingTab(`Unable to parse range: '${tab}'`);
+    return g;
   };
   const sub = (rg: Range): Grid => {
-    const rows = grid.slice(rg.r1, rg.r2 === Infinity ? undefined : rg.r2 + 1);
+    const rows = gridOf(rg.tab).slice(rg.r1, rg.r2 === Infinity ? undefined : rg.r2 + 1);
     return trimmed(rows.map((r) => r.slice(rg.c1, rg.c2 === Infinity ? undefined : rg.c2 + 1)));
   };
-  const write = (r0: number, c0: number, values: unknown[][]) => {
+  const write = (tab: string, r0: number, c0: number, values: unknown[][]) => {
+    const grid = gridOf(tab);
     values.forEach((row, i) => {
       const r = r0 + i;
       while (grid.length <= r) grid.push([]);
@@ -94,9 +110,9 @@ export async function startMockSheets(opts: { tab: string; rows: Grid; port?: nu
       });
     });
   };
-  const lastDataRow = () => {
+  const lastDataRow = (tab: string) => {
     let last = -1;
-    grid.forEach((r, i) => {
+    gridOf(tab).forEach((r, i) => {
       if (r.some((c) => c !== '')) last = i;
     });
     return last;
@@ -118,19 +134,29 @@ export async function startMockSheets(opts: { tab: string; rows: Grid; port?: nu
     };
     try {
       let m: RegExpExecArray | null;
+      if ((m = /^\/v4\/spreadsheets\/[^/]+:batchUpdate$/.exec(path)) && req.method === 'POST') {
+        const { requests } = JSON.parse(body) as { requests: { addSheet?: { properties?: { title?: string } } }[] };
+        for (const r of requests) {
+          const title = r.addSheet?.properties?.title;
+          if (!title) return json(400, { error: { code: 400, message: 'mock: only addSheet is supported' } });
+          if (tabs.has(title)) return json(400, { error: { code: 400, message: `A sheet with the name "${title}" already exists.` } });
+          tabs.set(title, []);
+        }
+        return json(200, { replies: requests.map(() => ({})) });
+      }
       if ((m = /^\/v4\/spreadsheets\/[^/]+\/values:batchUpdate$/.exec(path)) && req.method === 'POST') {
         const { data } = JSON.parse(body) as { data: { range: string; values: unknown[][] }[] };
         for (const d of data) {
           const rg = parseRange(d.range);
-          write(rg.r1, rg.c1, d.values);
+          write(rg.tab, rg.r1, rg.c1, d.values);
         }
         return json(200, { totalUpdatedCells: data.length, responses: data.map((d) => ({ updatedRange: d.range })) });
       }
       if ((m = /^\/v4\/spreadsheets\/[^/]+\/values\/(.+):append$/.exec(path)) && req.method === 'POST') {
         const rg = parseRange(m[1]!);
         const { values } = JSON.parse(body) as { values: unknown[][] };
-        const start = lastDataRow() + 1;
-        write(start, rg.c1, values);
+        const start = lastDataRow(rg.tab) + 1;
+        write(rg.tab, start, rg.c1, values);
         return json(200, { updates: { updatedRange: rangeString({ ...rg, r1: start }, values.length, values[0]?.length ?? 0), updatedRows: values.length } });
       }
       if ((m = /^\/v4\/spreadsheets\/[^/]+\/values\/(.+)$/.exec(path))) {
@@ -141,12 +167,13 @@ export async function startMockSheets(opts: { tab: string; rows: Grid; port?: nu
         }
         if (req.method === 'PUT') {
           const { values } = JSON.parse(body) as { values: unknown[][] };
-          write(rg.r1, rg.c1, values);
+          write(rg.tab, rg.r1, rg.c1, values);
           return json(200, { updatedRange: m[1], updatedRows: values.length, updatedCells: values.reduce((n, r) => n + r.length, 0) });
         }
       }
       json(404, { error: { code: 404, message: `mock: unsupported ${req.method} ${path}` } });
     } catch (e) {
+      if (e instanceof MissingTab) return json(400, { error: { code: 400, message: e.message, status: 'INVALID_ARGUMENT' } });
       json(500, { error: { code: 500, message: String(e) } });
     }
   });
@@ -155,13 +182,23 @@ export async function startMockSheets(opts: { tab: string; rows: Grid; port?: nu
 
   return {
     url: `http://127.0.0.1:${port}/`,
-    grid: () => trimmed(grid).map((r) => [...r]),
+    grid: () => trimmed(gridOf(opts.tab)).map((r) => [...r]),
     set: (rows) => {
-      grid = rows.map((r) => [...r]);
+      tabs.set(opts.tab, rows.map((r) => [...r]));
     },
-    cell: (row, col, value) => write(row, col, [[value]]),
+    cell: (row, col, value) => write(opts.tab, row, col, [[value]]),
     deleteRow: (row) => {
-      grid.splice(row, 1);
+      gridOf(opts.tab).splice(row, 1);
+    },
+    tab: (name) => {
+      const g = tabs.get(name);
+      return g ? trimmed(g).map((r) => [...r]) : undefined;
+    },
+    setTab: (name, rows) => {
+      tabs.set(name, rows.map((r) => [...r]));
+    },
+    dropTab: (name) => {
+      tabs.delete(name);
     },
     calls,
     close: () => new Promise((r) => server.close(() => r())),

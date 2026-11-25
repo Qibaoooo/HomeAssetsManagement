@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { api } from '../api';
+import LocationsCard from '../components/LocationsCard.vue';
 import PxIcon from '../components/PxIcon.vue';
 import PxSprite from '../components/PxSprite.vue';
 import { useItems } from '../stores/items';
@@ -177,6 +178,8 @@ const counts = (r: NonNullable<SyncStatus['last']>) =>
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <LocationsCard />
 
       <v-card class="px-panel" title="Google Sheet sync">
         <v-card-text v-if="status">

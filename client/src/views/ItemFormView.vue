@@ -88,7 +88,7 @@ const GROUPS: FieldDef[][] = [
     { key: 'brand', label: 'Brand', kind: 'text', words: true },
   ],
   [
-    { key: 'location', label: 'Location', kind: 'text' },
+    { key: 'location', label: 'Location', kind: 'tree' },
     { key: 'size', label: 'Size', kind: 'text' },
     { key: 'quantity', label: 'Quantity', kind: 'number' },
     { key: 'tag', label: 'Tag', kind: 'tags', hint: 'Several allowed: tap suggestions, or type and press Enter.' },

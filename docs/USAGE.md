@@ -17,6 +17,20 @@
   cloud icon in the list. They are pushed on the next successful sync (every minute, or
   *Sync now* in Settings).
 
+## Locations
+
+- **Locations are a fixed list with levels**, managed in *Settings > Locations*: for example
+  *Master Bedroom > Right shelf > Top*, up to four levels. The item form picks from this list;
+  it cannot type a new one. Add, rename, move, reorder or delete locations in Settings.
+- **Renaming or moving a location moves every item inside it**, including sub-locations, in the
+  app and the sheet. Deleting a location that items still use asks where those items go.
+- **In the sheet** an item's Location cell holds the full path, levels joined by ` > `. The list
+  itself lives in its own tab, *Locations*, one full path per row in display order. Editing that
+  tab by hand works: the app adopts it on the next sync (and adds missing parent levels).
+- **A location typed by hand in an item row** that is not in the list is kept as typed and shown
+  in *Settings > Locations* under *Not in the list*, with *Add* and *Move…* to fix it.
+- The list filter's location chips show the top level; a chip matches everything inside it.
+
 ## Editing the sheet by hand
 
 Safe:

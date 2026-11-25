@@ -50,6 +50,22 @@ export interface Meta {
   sizes: string[];
 }
 
+/** One node of the location tree (Settings > Locations). */
+export interface LocationNode {
+  path: string;
+  name: string;
+  depth: number;
+  active: number;
+  retired: number;
+  subtreeActive: number;
+  subtreeTotal: number;
+}
+export interface LocationUsage {
+  nodes: LocationNode[];
+  /** item locations not in the list (typed by hand in the sheet) */
+  unlisted: { location: string; active: number; retired: number }[];
+}
+
 export interface SyncResult {
   at: string;
   ok: boolean;

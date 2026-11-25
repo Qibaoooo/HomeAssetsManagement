@@ -75,15 +75,24 @@ watch(categoryOptions, (opts) => {
   if (category.value && !opts.includes(category.value)) category.value = null;
 });
 
+// Locations are paths like "Master Bedroom > Right shelf > Top". Chips show the top level; a chip
+// matches items there and in every sub-location.
+const SEP = ' > ';
+const topOf = (l: string) => l.split(SEP)[0]!;
+const within = (l: string, place: string) => l === place || l.startsWith(place + SEP);
+
 // Location chips belong to the chosen category: only its locations, and none without a category.
 const locationsForCategory = computed(() => {
   if (!category.value) return [];
   const set = new Set<string>();
   for (const i of store.items) {
     if (i.category !== category.value || i.status === 'retired' || !i.location) continue;
-    set.add(i.location);
+    set.add(topOf(i.location));
   }
-  return [...set].sort((a, b) => a.localeCompare(b));
+  // configured order first (Settings > Locations), then anything unlisted
+  const order = store.meta.locations;
+  const rank = (l: string) => (order.indexOf(l) >= 0 ? order.indexOf(l) : order.length);
+  return [...set].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
 });
 watch(category, () => (location.value = []));
 
@@ -105,7 +114,7 @@ const visible = computed(() => {
   return store.items.filter((i) => {
     if (!settings.showRetired && i.status === 'retired') return false;
     if (category.value && i.category !== category.value) return false;
-    if (location.value.length && !location.value.includes(i.location)) return false;
+    if (location.value.length && !location.value.some((l) => within(i.location, l))) return false;
     if (wanted.length) {
       const keys = tagKeys(i);
       if (!wanted.every((t) => keys.has(t))) return false;

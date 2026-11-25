@@ -9,6 +9,8 @@ import { startBackupScheduler } from './backup.js';
 import { backupRoutes } from './routes/backup.js';
 import { categoryRoutes } from './routes/categories.js';
 import { itemRoutes } from './routes/items.js';
+import { locationRoutes } from './routes/locations.js';
+import { seedLocationsIfNeeded } from './locations.js';
 import { syncRoutes } from './routes/sync.js';
 import { startScheduler } from './sync.js';
 
@@ -33,6 +35,7 @@ await app.register(itemRoutes);
 await app.register(syncRoutes);
 await app.register(backupRoutes);
 await app.register(categoryRoutes);
+await app.register(locationRoutes);
 
 // Built client, if present, with SPA fallback for client-side routes.
 // Files are looked up per request (wildcard route), so a new `vite build` is served without a restart.
@@ -59,6 +62,7 @@ if (hasClient) {
   });
 }
 
+seedLocationsIfNeeded();
 startScheduler();
 startBackupScheduler();
 

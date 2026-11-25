@@ -21,12 +21,14 @@ process.env.SHEETS_API_URL = mock.url;
 
 const { syncNow } = await import('../src/sync.js');
 const db = await import('../src/db.js');
+await import('../src/locations.js'); // creates the locations table the reset below clears
 
 const col = (name: string) => mock.grid()[0]!.findIndex((h) => h.toLowerCase() === name.toLowerCase());
 const sheetRow = (type: string) => mock.grid().find((r) => r[1] === type);
 const resetAll = () => {
-  db.db.exec('DELETE FROM items; DELETE FROM meta; DELETE FROM sync_log; DELETE FROM backup_history;');
+  db.db.exec('DELETE FROM items; DELETE FROM meta; DELETE FROM sync_log; DELETE FROM backup_history; DELETE FROM locations;');
   mock.set([HEADERS, ROW1, ROW2]);
+  mock.dropTab('Locations');
 };
 
 before(() => resetAll());

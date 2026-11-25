@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 import { dirtyItems, listItems, log, markSynced, metaGet, metaSet, now, transaction, updateItem, upsertFromSheet } from './db.js';
+import { syncLocationsTab } from './locations.js';
 import { appendRows, fieldsToRow, readSheet, rowToFields, writeRows, type SheetSnapshot } from './sheets.js';
 import { normalizeTags, type Item, type ItemStatus, type SheetFields } from './types.js';
 
@@ -168,6 +169,13 @@ async function doSync(reason: string): Promise<SyncResult> {
     await writeRows(snap, updates);
     await appendRows(snap, appends);
     transaction(() => written.forEach((w) => markSynced(w.id, w.key)));
+
+    // The location tree has its own tab. A failure there is logged but does not fail the item sync.
+    try {
+      await syncLocationsTab();
+    } catch (e) {
+      log('error', `location tab sync failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
 
     result.ok = true;
   } catch (e) {

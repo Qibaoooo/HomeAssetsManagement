@@ -132,3 +132,49 @@ export async function appendRows(snap: SheetSnapshot, rows: (string | number)[][
     requestBody: { values: rows },
   });
 }
+
+// ---- location tab ------------------------------------------------------------------
+const LOCATION_HEADER = 'Location';
+
+const isMissingTab = (e: unknown) => {
+  const err = e as { code?: unknown; response?: { status?: number }; message?: string };
+  const status = err.response?.status ?? (typeof err.code === 'number' ? err.code : Number(err.code));
+  return status === 400 && /unable to parse range/i.test(err.message ?? '');
+};
+
+/** Paths in the location tab, in row order; null when the tab does not exist yet. */
+export async function readLocationsTab(): Promise<string[] | null> {
+  try {
+    const res = await sheets().spreadsheets.values.get({
+      spreadsheetId: config.sheetId,
+      range: `'${config.locationsTab}'!A:A`,
+      valueRenderOption: 'FORMATTED_VALUE',
+    });
+    const values = (res.data.values ?? []) as unknown[][];
+    const col = values.map((r) => cell(r[0]));
+    if (col[0]?.toLowerCase() === LOCATION_HEADER.toLowerCase()) col.shift();
+    return col.filter(Boolean);
+  } catch (e) {
+    if (isMissingTab(e)) return null;
+    throw e;
+  }
+}
+
+export async function createLocationsTab() {
+  await sheets().spreadsheets.batchUpdate({
+    spreadsheetId: config.sheetId,
+    requestBody: { requests: [{ addSheet: { properties: { title: config.locationsTab } } }] },
+  });
+}
+
+/** Rewrite the tab: header + one path per row; rows beyond the new list are blanked. */
+export async function writeLocationsTab(paths: string[], previousRows: number) {
+  const height = Math.max(paths.length, previousRows);
+  const values = [[LOCATION_HEADER], ...paths.map((p) => [p]), ...Array.from({ length: height - paths.length }, () => [''])];
+  await sheets().spreadsheets.values.update({
+    spreadsheetId: config.sheetId,
+    range: `'${config.locationsTab}'!A1:A${height + 1}`,
+    valueInputOption: 'RAW',
+    requestBody: { values },
+  });
+}

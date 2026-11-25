@@ -12,7 +12,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 
-export type FieldKind = 'text' | 'number' | 'decimal' | 'date' | 'multiline' | 'tags';
+export type FieldKind = 'text' | 'number' | 'decimal' | 'date' | 'multiline' | 'tags' | 'tree';
 export interface FieldDef {
   key: string;
   label: string;
@@ -110,6 +110,50 @@ const filtered = computed(() => {
 });
 const exactMatch = computed(() => !!query.value && props.suggestions.some((s) => s.toLowerCase() === query.value));
 
+// ---- tree (locations): drill down level by level, or search across full paths -------------
+// Suggestions are full paths like "Master Bedroom > Right shelf > Top", in tree order.
+const SEP = ' > ';
+const treeSearch = ref('');
+const cursor = ref(''); // the level being shown; '' = top level
+const parentOfPath = (p: string) => {
+  const i = p.lastIndexOf(SEP);
+  return i < 0 ? '' : p.slice(0, i);
+};
+const leaf = (p: string) => p.split(SEP).pop() ?? p;
+const children = computed(() => props.suggestions.filter((p) => parentOfPath(p) === cursor.value));
+const kidsCount = (p: string) => props.suggestions.filter((x) => parentOfPath(x) === p).length;
+const crumbs = computed(() => {
+  const parts = cursor.value ? cursor.value.split(SEP) : [];
+  return parts.map((name, i) => ({ name, path: parts.slice(0, i + 1).join(SEP) }));
+});
+const treeMatches = computed(() => {
+  const q = treeSearch.value.trim().toLowerCase();
+  return q ? props.suggestions.filter((p) => p.toLowerCase().includes(q)) : [];
+});
+const isChosen = (p: string) => text.value === p;
+const onChosenPath = (p: string) => text.value.startsWith(p + SEP);
+function openNode(p: string) {
+  if (kidsCount(p)) {
+    cursor.value = p;
+    treeSearch.value = '';
+  } else pickTree(p);
+}
+function pickTree(p: string) {
+  text.value = p;
+  treeSearch.value = '';
+  advance();
+}
+function onTreeKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    finish();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (treeMatches.value.length === 1) pickTree(treeMatches.value[0]!);
+    else if (!treeSearch.value.trim()) advance();
+  }
+}
+
 function pick(s: string) {
   if (props.field?.kind === 'tags') {
     if (hasTag(s)) removeTag(s);
@@ -151,6 +195,12 @@ watch(
   async ([open]) => {
     if (!open) return;
     tagDraft.value = '';
+    treeSearch.value = '';
+    if (props.field?.kind === 'tree') {
+      // open on the level of the current value; picking is by tap, so no keyboard
+      cursor.value = props.suggestions.includes(text.value) ? parentOfPath(text.value) : '';
+      return;
+    }
     await nextTick();
     keepFocus();
   },
@@ -267,6 +317,24 @@ const inputMode = computed(() => {
               </button>
             </template>
 
+            <template v-else-if="field.kind === 'tree'">
+              <v-icon size="22" class="fe__search">mdi-magnify</v-icon>
+              <input
+                ref="inputEl"
+                v-model="treeSearch"
+                class="fe__field"
+                type="text"
+                placeholder="Search locations"
+                autocomplete="off"
+                autocorrect="off"
+                enterkeyhint="search"
+                @keydown="onTreeKey"
+              />
+              <button v-if="treeSearch" type="button" class="fe__clear" aria-label="Clear search" @click="treeSearch = ''">
+                <v-icon size="20">mdi-close-circle</v-icon>
+              </button>
+            </template>
+
             <template v-else>
               <input
                 ref="inputEl"
@@ -290,7 +358,72 @@ const inputMode = computed(() => {
 
           <!-- suggestions: the half of the screen the keyboard leaves free -->
           <div class="fe__list">
-            <template v-if="suggestions.length">
+            <template v-if="field.kind === 'tree'">
+              <template v-if="treeSearch.trim()">
+                <button
+                  v-for="p in treeMatches"
+                  :key="p"
+                  type="button"
+                  class="fe__opt"
+                  :class="{ 'fe__opt--on': isChosen(p) }"
+                  @click="pickTree(p)"
+                >
+                  <span>{{ p }}</span>
+                  <v-icon v-if="isChosen(p)" size="18">mdi-check</v-icon>
+                </button>
+                <div v-if="!treeMatches.length" class="fe__new">No location matches. Add it in Settings &gt; Locations.</div>
+              </template>
+              <template v-else>
+                <div class="fe__crumbs">
+                  <button type="button" class="fe__crumb" :class="{ 'fe__crumb--here': !cursor }" @click="cursor = ''">All</button>
+                  <template v-for="c in crumbs" :key="c.path">
+                    <v-icon size="16" class="fe__crumb-sep">mdi-chevron-right</v-icon>
+                    <button type="button" class="fe__crumb" :class="{ 'fe__crumb--here': c.path === cursor }" @click="cursor = c.path">
+                      {{ c.name }}
+                    </button>
+                  </template>
+                </div>
+                <button
+                  v-if="cursor"
+                  type="button"
+                  class="fe__opt fe__opt--use"
+                  :class="{ 'fe__opt--on': isChosen(cursor) }"
+                  @click="pickTree(cursor)"
+                >
+                  <span>Use &ldquo;{{ leaf(cursor) }}&rdquo;</span>
+                  <v-icon size="18">mdi-check</v-icon>
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="fe__opt fe__opt--use"
+                  :class="{ 'fe__opt--on': text === '' }"
+                  @click="pickTree('')"
+                >
+                  <span>No location</span>
+                </button>
+                <button
+                  v-for="p in children"
+                  :key="p"
+                  type="button"
+                  class="fe__opt"
+                  :class="{ 'fe__opt--on': isChosen(p), 'fe__opt--trail': onChosenPath(p) }"
+                  @click="openNode(p)"
+                >
+                  <span>{{ leaf(p) }}</span>
+                  <span class="fe__opt-meta">
+                    <template v-if="kidsCount(p)">
+                      <span class="fe__kids">{{ kidsCount(p) }}</span>
+                      <v-icon size="20">mdi-chevron-right</v-icon>
+                    </template>
+                    <v-icon v-else-if="isChosen(p)" size="18">mdi-check</v-icon>
+                  </span>
+                </button>
+                <div v-if="!suggestions.length" class="fe__new">No locations yet. Add them in Settings &gt; Locations.</div>
+                <div v-else class="fe__foot">Missing one? Add it in Settings &gt; Locations.</div>
+              </template>
+            </template>
+            <template v-else-if="suggestions.length">
               <button
                 v-for="s in filtered"
                 :key="s"
@@ -522,6 +655,57 @@ html.fe-open body {
   border-color: var(--sp-green-dark);
   color: var(--sp-plum);
   font-weight: 600;
+}
+.fe__search {
+  color: var(--sp-muted);
+}
+.fe__crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 8px;
+}
+.fe__crumb {
+  background: none;
+  border: none;
+  padding: 6px 6px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sp-brown-dark);
+  cursor: pointer;
+}
+.fe__crumb--here {
+  color: var(--sp-plum);
+  background: var(--sp-sand);
+}
+.fe__crumb-sep {
+  color: var(--sp-tan-dark);
+}
+.fe__opt--use {
+  border-style: dashed;
+  color: var(--sp-brown-dark);
+  font-weight: 600;
+}
+.fe__opt--trail {
+  border-color: var(--sp-green-dark);
+}
+.fe__opt-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--sp-tan-dark);
+}
+.fe__kids {
+  font-size: 13px;
+  color: var(--sp-muted);
+}
+.fe__foot {
+  padding: 8px 6px 0;
+  font-size: 13px;
+  color: var(--sp-muted);
 }
 .fe__new {
   display: flex;

@@ -5,6 +5,7 @@ import sharp from 'sharp';
 import { backupSoon } from '../backup.js';
 import { photosDir } from '../config.js';
 import { buildItem, distinctValues, getItem, insertItem, listItems, setPhoto, updateItem } from '../db.js';
+import { hasPath, listPaths, normalizePath } from '../locations.js';
 import { syncNow } from '../sync.js';
 import type { Item, ItemInput, ItemStatus } from '../types.js';
 
@@ -67,6 +68,11 @@ export function validateInput(body: unknown): string | null {
   return null;
 }
 
+/** Locations come from the configured list (Settings > Locations). Spacing around ">" is normalised. */
+const withLocation = (b: ItemInput): ItemInput =>
+  typeof b.location === 'string' && b.location.includes('>') ? { ...b, location: normalizePath(b.location) } : b;
+const NOT_LISTED = (l: string) => `"${l}" is not in the location list. Add it in Settings > Locations first.`;
+
 // Photo URLs carry the upload version so a replaced photo is never served from the browser cache.
 const photoUrls = (item: Item) => {
   if (!item.photo) return { photo_url: null, thumb_url: null };
@@ -88,7 +94,7 @@ export async function itemRoutes(app: FastifyInstance) {
     categories: distinctValues('category'),
     types: distinctValues('type'),
     brands: distinctValues('brand'),
-    locations: distinctValues('location'),
+    locations: listPaths(),
     tags: distinctValues('tag'),
     sizes: distinctValues('size'),
   }));
@@ -101,7 +107,8 @@ export async function itemRoutes(app: FastifyInstance) {
   app.post<{ Body: ItemInput }>('/api/items', async (req, reply) => {
     const problem = validateInput(req.body ?? {});
     if (problem) return reply.code(400).send({ error: problem });
-    const item = buildItem(req.body ?? {});
+    const item = buildItem(withLocation(req.body ?? {}));
+    if (item.location && !hasPath(item.location)) return reply.code(400).send({ error: NOT_LISTED(item.location) });
     if (!item.category && !item.type && !item.design) {
       req.log.info({ body: req.body }, 'item create rejected: no category, type or design');
       return reply.code(400).send({ error: 'category, type or design is required' });
@@ -120,7 +127,11 @@ export async function itemRoutes(app: FastifyInstance) {
     }
     const problem = validateInput(req.body ?? {});
     if (problem) return reply.code(400).send({ error: problem });
-    const next = buildItem(req.body ?? {}, base);
+    const next = buildItem(withLocation(req.body ?? {}), base);
+    // A location typed by hand in the sheet may be unlisted; it can stay, but the app only sets listed ones.
+    if (next.location !== base.location && next.location && !hasPath(next.location)) {
+      return reply.code(400).send({ error: NOT_LISTED(next.location) });
+    }
     updateItem(next);
     req.log.info({ itemId: base.id, by: next.updated_by, changed: diff(base, next) }, `item updated: ${describe(next)}`);
     const synced = await pushQuietly(req, 'update');
